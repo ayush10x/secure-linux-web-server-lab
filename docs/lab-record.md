@@ -24,7 +24,7 @@ Fill this out with observations from your own VMs. Leave secrets out of GitHub.
 | Approved SSH key and sudo | Not run | |
 | Root/password SSH denied | Not run | |
 | Default-deny UFW with narrow rules | Not run | |
-| Reboot persistence | Not run | |
+| Reboot persistence | Pass | Server rebooted to the VirtualBox firmware/Ubuntu boot path; `http://192.168.56.200/` returned HTTP 200 afterward |
 | Backup creation and temporary restoration | Pass | Archive created, extracted under `/tmp/lab-restore-check`, `diff -ru` returned no differences |
 
 The health check currently reports UFW inactive, as expected before Client key access and firewall rules are validated. Do not mark its overall result passed yet. The Client boots headlessly with 2 virtual CPUs, but its GUI launch still stalls; SSH is reachable on its host-only address.
