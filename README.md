@@ -4,9 +4,9 @@
 
 This repository contains runnable files and a guided build. The actual test record is in [docs/lab-record.md](docs/lab-record.md), while [docs/action-log.md](docs/action-log.md) records actions taken and why. Test rows stay marked pending until they are observed on both VMs.
 
-On an Apple Silicon Mac, use an ARM64 Ubuntu Server installer. The existing VirtualBox machines in this lab are named `ubunutu server` (Server VM) and `ubuntu 26.04 ` (Client VM). Those are VirtualBox labels; the installed Server VM booted with Linux hostname `kapserver`.
+On an Apple Silicon Mac, use an ARM64 Ubuntu Server installer. The existing VirtualBox machines in this lab are named `ubunutu server` (Server VM) and `ubuntu 26.04 ` (Client VM). Those are VirtualBox labels; the installed Server VM booted with Linux hostname `kapserver`. Its host-only IPv4 address is statically configured as `192.168.56.200/24` on `enp0s9`; the Client VM currently receives `192.168.56.2` by DHCP.
 
-The installer account should be a named sudo administrator; this guide uses `labadmin`. Set its password yourself and do not put it in this repository. If you chose a different username, replace `labadmin` in the commands and SSH policy before applying them. With working NAT and host-only networking, copy this repository to the Server VM, take a `clean-install` snapshot, then run:
+The installer account is the named sudo administrator `ayush`. Keep its password out of this repository. The Server VM has a `clean-install` snapshot, and the web-service installation below has run successfully. To reproduce from the snapshot or on a fresh VM, copy this repository to the Server VM and run:
 
 ```bash
 sudo bash scripts/install-server.sh --apply
@@ -33,7 +33,7 @@ Excluded: public DNS, production TLS certificates, internet exposure, databases,
 - Host: Apple Silicon Mac (this lab uses an M2 Pro), VirtualBox 7.2 or later, and enough free RAM/storage for both guests. Do not use an AMD64 Ubuntu ISO on Apple Silicon VirtualBox.
 - Server VM: Ubuntu Server 26.04 ARM64, 2 virtual CPUs, 3 GB RAM, 25 GB dynamically allocated virtual disk. The existing `ubunutu server` VM matches this sizing.
 - Client VM: an ARM64 Linux installation, 2 virtual CPUs and 4 GB RAM are sufficient for this lab; allow at least 20 GB disk. The existing `ubuntu 26.04 ` VM has 5 CPUs, about 4.4 GB RAM, and a 25 GB disk; preserve its existing installation.
-- Networking on **both** VMs: Adapter 1 = NAT for package downloads; Adapter 2 = the same VirtualBox host-only network (`HostNetwork`) for SSH and HTTP lab traffic. Confirm the assigned private addresses with `ip -br address` on each guest before substituting them into commands.
+- Networking on **both** VMs: Adapter 1 = NAT for package downloads; Adapter 2 = the same VirtualBox host-only network (`HostNetwork`) for SSH and HTTP lab traffic. The Server uses `192.168.56.200/24`, outside this host-only network's DHCP range (`192.168.56.1`–`192.168.56.199`). Confirm both guest addresses with `ip -br address` before running tests.
 - Keep installer ISO images and any VM snapshots outside the Git repository. Never publish passwords, private SSH keys, guest disk images, or raw logs containing secrets.
 
 ## Architecture
@@ -42,7 +42,7 @@ Excluded: public DNS, production TLS certificates, internet exposure, databases,
 Client VM (CLIENT_HOST_ONLY_IP)
        | SSH 22, HTTP 80
        v
-Server VM (SERVER_HOST_ONLY_IP, hostname kapserver)
+Server VM (192.168.56.200, hostname kapserver)
   +-- OpenSSH: remote administration
   +-- UFW: default deny incoming
   +-- Nginx: /var/www/lab-site
@@ -65,7 +65,7 @@ Required software: `openssh-server`, `nginx`, `ufw`, `rsync`, and `curl`. Use a 
 
 ## Implementation
 
-Replace example IP addresses and usernames before running commands. Commands labeled **server** run on the Server VM; commands labeled **client** run on the Client VM. The example addresses below are not yet verified for the actual VMs.
+Replace placeholder IP addresses before running commands. Commands labeled **server** run on the Server VM; commands labeled **client** run on the Client VM. The Server's static address `192.168.56.200` has been verified; the Client's current DHCP address is `192.168.56.2`.
 
 ### 1. Establish a recoverable baseline
 
@@ -87,7 +87,7 @@ ip -br address
 - **Common mistakes:** Updating the wrong VM, confusing NAT and private-adapter addresses, or continuing after package errors.
 - **Rollback:** Restore the `clean-install` snapshot if the baseline is unusable.
 
-For a predictable IP, prefer a DHCP reservation in the hypervisor lab network. If unavailable, configure Ubuntu's existing Netplan file with the actual interface name from `ip -br link`. Keep the YAML indentation exact, run `sudo netplan try`, and accept only after connectivity is confirmed. `netplan try` automatically rolls back if confirmation is not received.
+For a predictable IP, prefer a DHCP reservation in the hypervisor lab network. Here, the Server uses a static `192.168.56.200/24` address outside `HostNetwork`'s DHCP pool. It was set with Netplan on `enp0s9`, then accepted with `sudo netplan try --timeout 60` only after private-network ping and HTTP checks succeeded. The NAT interface `enp0s8` remains on DHCP. When reproducing, check your own DHCP pool first and use `netplan try` so connectivity changes can roll back.
 
 ### 2. Create separate accounts
 
@@ -97,13 +97,13 @@ For a predictable IP, prefer a DHCP reservation in the hypervisor lab network. I
 
 ```bash
 sudo adduser webuser
-id labadmin
+id ayush
 id webuser
-sudo -l -U labadmin
+sudo -l -U ayush
 ```
 
-- **Expected result:** `labadmin` belongs to `sudo`; `webuser` does not.
-- **Verify:** From the VM console, log in as `labadmin` and run `sudo whoami`; output should be `root`.
+- **Expected result:** `ayush` belongs to `sudo`; `webuser` does not.
+- **Verify:** From the VM console, log in as `ayush` and run `sudo whoami`; output should be `root`.
 - **Common mistakes:** Omitting `-a` in `usermod -aG`, which can remove existing group membership.
 - **Rollback:** If the installer account lacks sudo, use an existing administrator or recovery console to correct its membership. Do not create a duplicate account with the same name.
 
@@ -136,9 +136,9 @@ curl -I http://127.0.0.1/
 - **Actions (client):**
 
 ```bash
-ssh-keygen -t ed25519 -a 64 -f ~/.ssh/server_labadmin
-ssh-copy-id -i ~/.ssh/server_labadmin.pub labadmin@SERVER_HOST_ONLY_IP
-ssh -i ~/.ssh/server_labadmin labadmin@SERVER_HOST_ONLY_IP
+ssh-keygen -t ed25519 -a 64 -f ~/.ssh/server_ayush
+ssh-copy-id -i ~/.ssh/server_ayush.pub ayush@SERVER_HOST_ONLY_IP
+ssh -i ~/.ssh/server_ayush ayush@SERVER_HOST_ONLY_IP
 ```
 
 Keep the private key on the client with mode `0600`; only the `.pub` file may be shared. On the server, `~/.ssh` should be `0700` and `authorized_keys` should be `0600`.
@@ -161,7 +161,7 @@ sudo sshd -T | grep -E 'permitrootlogin|passwordauthentication|pubkeyauthenticat
 sudo systemctl reload ssh
 ```
 
-- **Expected result:** Syntax validation is silent; effective settings show root/password login disabled and `labadmin` allowed.
+- **Expected result:** Syntax validation is silent; effective settings show root/password login disabled and `ayush` allowed.
 - **Verify:** In a new client terminal, confirm key login works and password-only/root attempts fail. Do not close the recovery session until both results are recorded.
 - **Common mistakes:** Editing `/etc/ssh/sshd_config` without a backup, misspelling the username, or restarting before validation.
 - **Rollback:** From the console/open session, move the drop-in out of `/etc/ssh/sshd_config.d`, run `sudo sshd -t`, then reload SSH.

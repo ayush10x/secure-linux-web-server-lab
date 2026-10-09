@@ -6,7 +6,7 @@ Record date, tester, command/action, expected result, actual result, and pass/fa
 |---|---|---|
 | WEB-01 | From client: `curl -I http://SERVER_HOST_ONLY_IP/` | HTTP 200 |
 | WEB-02 | Reboot server, then repeat WEB-01 | Nginx starts automatically; HTTP 200 |
-| SSH-01 | Log in as `labadmin` with the approved key | Success; `sudo -v` succeeds |
+| SSH-01 | Log in as `ayush` with the approved key | Success; `sudo -v` succeeds |
 | SSH-02 | Attempt direct root login | Denied |
 | SSH-03 | Attempt password-only login after hardening | Denied |
 | SSH-04 | Attempt login as `webuser` | Denied by `AllowUsers` |
