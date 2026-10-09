@@ -127,4 +127,12 @@ package_update_exit=0
 
 The four deferred packages were `libopeniscsiusr`, `open-iscsi`, `python3-software-properties`, and `software-properties-common`, deferred by phasing. `dpkg --audit` was empty. HTTP initially failed during boot, then returned 200; the test waited for service startup rather than treating the first transient boot failure as the final result.
 
-GitHub CI proves repository syntax/lint checks only. It does not certify the VM firewall, SSH, backup, or reboot behavior; those were observed in this local lab.
+## Evidence interpretation and revised tooling
+
+The seven-check guest output above records the original verifier before the 10 October recruiter-driven revision. Its password-only BatchMode attempt could not independently prove password authentication was disabled; exit 255 alone could also represent transport or host-key error. Recorded effective `sshd -T` settings and denial journal entries remain evidence for actual guest policy. Root/webuser probes with the administrator key alone do not isolate each denial directive.
+
+The revised verifier pins the specified identity, requires positive administrator access before negative SSH checks, and requires explicit authentication-denial diagnostics rather than any exit 255. It inspects verbose server-offered methods without submitting a password and fails if password or keyboard-interactive is advertised. Prior trusted host-key enrollment is required. These probes complement effective daemon settings; they are not certification of every SSH configuration.
+
+Offline `python3 -m unittest discover -s tests -v` covers secure fixtures, password/interactive offerings, transport and host-key failures, failed positive login, exact HTTP status and curl failures. Mocks test script decision logic only, not guest security. Revised scripts have not been deployed/rerun on guests as part of this repository-only review.
+
+GitHub CI checks syntax/lint, required artifacts and offline fixtures. It does not certify VM firewall, SSH, backup or reboot behavior; those were observed separately in the local lab.

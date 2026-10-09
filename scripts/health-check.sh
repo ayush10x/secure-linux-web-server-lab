@@ -18,7 +18,14 @@ check "Nginx is active" systemctl is-active --quiet nginx
 check "Nginx is enabled" systemctl is-enabled --quiet nginx
 check "SSH is active" systemctl is-active --quiet ssh
 check "UFW is active" bash -c "ufw status | grep -q '^Status: active$'"
-check "Local website returns HTTP 200" curl --fail --silent --show-error --max-time 5 http://127.0.0.1/
+# Called indirectly through check().
+# shellcheck disable=SC2317
+http_200() {
+  local status
+  status=$(curl --silent --show-error --max-time 5 --output /dev/null --write-out '%{http_code}' http://127.0.0.1/) || return 1
+  [[ $status == 200 ]]
+}
+check "Local website returns HTTP 200" http_200
 check "Site configuration is valid" nginx -t
 
 root_use=$(df -P / | awk 'NR==2 {gsub(/%/, "", $5); print $5}')

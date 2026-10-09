@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   scripts:
     runs-on: ubuntu-latest
@@ -19,6 +22,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y shellcheck
           shellcheck scripts/*.sh
+      - name: Offline script regression fixtures (not VM acceptance tests)
+        run: python3 -m unittest discover -s tests -v
       - name: Verify required project files
         run: |
           test -s README.md

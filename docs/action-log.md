@@ -2,6 +2,18 @@
 
 This is a factual record of work performed for this lab. Planned steps are not recorded as completed. Secrets and private keys are excluded.
 
+## Recruiter-driven repository review: 10 October 2026
+
+| Action | Why | Observed result |
+|---|---|---|
+| Two independent AI subagents reviewed the full tracked repository as simulated cybersecurity recruiters | Assess entry-level relevance, evidence quality and reproducibility | Pre-fix subjective scores 75/100 and 78/100 on different rubrics; findings recorded in [review log](recruiter-review.md), not employer feedback |
+| Third subagent corrected setup paths, installation alternatives, locked-account creation, rollback, networking templates and host-key enrollment | Prevent reproduction failures and unsafe trust/lockout assumptions | Read-only second-pass review accepted the corrections; no VM installation or network changes performed |
+| Tightened SSH denial checks and exact HTTP status assertions; clarified backup output | Prevent false-positive policy tests and overbroad verification claims | Six offline unittest methods passed, including password-enabled, transport and host-key failure fixtures; no revised-script guest rerun claimed |
+| Added threat model, interview prompts, least-privilege CI permissions and artifact ignores | Make limits and cybersecurity relevance inspectable | Both reviewers accepted core fixes with no remaining blocker; future TLS/off-host/monitoring work remains unimplemented |
+| Aligned report/PDF evidence boundaries and rendered all three PDF pages | Keep recruiter artifacts consistent and readable | All three PNGs visually inspected with no clipping or overlap; separate historical guest evidence preserved |
+
+Repository syntax, lint/CI and publication are checked separately during final delivery. The review does not change credentials or assert personal proficiency on the owner's behalf.
+
 ## Completion session: 10 October 2026 (Asia/Kolkata)
 
 | Action | Why | Observed result |

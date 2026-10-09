@@ -19,3 +19,7 @@ Completed results are in [lab-record.md](lab-record.md), supported by [verificat
 | BAK-02 | Extract newest archive to `/tmp` and compare | Restored files match source |
 
 Do not perform repeated password guesses or scans outside the private lab. After firewall tests, restore the client to its normal authorized IP and confirm access.
+
+A BatchMode failure is not sufficient proof for SSH-03. Inspect effective `PasswordAuthentication` and `KbdInteractiveAuthentication` through the authorized Server console/session. The revised verifier also fails if verbose negotiation advertises either method, without submitting a password. Denial probes require positive administrator access and explicit authentication-denial diagnostics. Transport/host-key failures are failures, not policy passes. Root/webuser probes must be interpreted alongside effective configuration and logs.
+
+`python3 -m unittest discover -s tests -v` runs offline mocked regression tests for decision paths and exact HTTP status, separate from VM acceptance.

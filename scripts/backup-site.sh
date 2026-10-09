@@ -22,4 +22,5 @@ tar --list --gzip --file "$archive" >/dev/null
 sha256sum "$archive" >"$archive.sha256"
 chmod 0600 "$archive" "$archive.sha256"
 
-printf 'Backup created and verified: %s\n' "$archive"
+printf 'Backup created, archive listed, checksum written: %s\n' "$archive"
+printf 'Verify separately with sha256sum -c and a temporary restore comparison.\n'

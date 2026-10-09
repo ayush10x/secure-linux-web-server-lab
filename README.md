@@ -8,6 +8,8 @@ This project demonstrates Linux service management, network configuration, least
 
 ## Review the project
 
+For a 60-second review: read the [recruiter brief](docs/recruiter-brief.md), inspect [SSH settings and denial logs](docs/verification-evidence.md), then compare the [threat model](docs/threat-model.md) with the limitations. The PDF is a compact overview, not a substitute for evidence.
+
 | Document | What it provides |
 |---|---|
 | [Project report](docs/project-report.md) | Design, decisions, verified outcomes, and limitations |
@@ -18,6 +20,9 @@ This project demonstrates Linux service management, network configuration, least
 | [Setup guide](docs/setup-guide.md) | Reproduction commands and recovery precautions |
 | [Operations guide](docs/operations-guide.md) | Checks, backup, restoration, and rollback |
 | [Action and decision log](docs/action-log.md) | What was done, why, and the observed result |
+| [Threat model](docs/threat-model.md) | Assets, trust boundaries, controls and residual risks |
+
+Two [simulated recruiter reviews](docs/recruiter-review.md) record AI assessments and resulting improvements, not employer feedback.
 
 ## Architecture
 
@@ -42,7 +47,7 @@ Both VMs use NAT for package downloads and the same host-only network for lab tr
 - UFW allows SSH from `.201` and HTTP from the lab subnet. A Mac-host SSH probe times out and creates a firewall log entry.
 - The health check returns zero; a backup checksum and temporary restore comparison pass.
 
-The full record includes reboot checks and package status. CI validates Bash syntax, ShellCheck, and required files. VM acceptance tests are recorded separately because GitHub CI cannot reach the local guests.
+The full record includes reboot checks and package status. CI validates Bash syntax, ShellCheck, required files and offline regression fixtures. VM acceptance tests are recorded separately because CI cannot reach the local guests. Revised verifier logic has fixture coverage; historical guest results are not presented as a rerun of revised code.
 
 ## Reproduce
 

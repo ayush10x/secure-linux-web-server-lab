@@ -9,3 +9,12 @@ backups/
 .DS_Store
 __pycache__/
 *.pyc
+*.vdi
+*.vmdk
+*.vhd
+*.vhdx
+*.iso
+*.ova
+*.ovf
+*.tar.gz
+tmp/pdfs/

@@ -1,4 +1,6 @@
-# Secure Linux Web Server — Final Report
+# Secure Linux Web Server - Reusable Report Template
+
+This is an unfilled template for future labs. The completed result is [project-report.md](project-report.md).
 
 ## Executive summary
 State the problem, lab result, and whether all acceptance tests passed.

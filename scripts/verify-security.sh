@@ -28,19 +28,39 @@ http_status() {
 # Called indirectly by check(), which invokes its argument list.
 # shellcheck disable=SC2317
 ssh_denied() {
-  "$@"
-  local status=$?
-  [[ $status == 255 ]]
+  local output status
+  output=$("$@" 2>&1)
+  status=$?
+  printf '%s\n' "$output"
+  [[ $status == 255 && $output == *"Permission denied ("* ]]
 }
-ssh_args=(-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=yes -i "$key_path")
+# No password is submitted: inspect the methods offered by the remote daemon.
+# shellcheck disable=SC2317
+password_disabled() {
+  local output status methods
+  output=$(ssh -v -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=yes -o PubkeyAuthentication=no -o PreferredAuthentications=password,keyboard-interactive "ayush@$server_ip" true 2>&1)
+  status=$?
+  methods=$(printf '%s\n' "$output" | sed -n 's/^debug1: Authentications that can continue: //p')
+  [[ $status == 255 && $output == *"Permission denied ("* && -n $methods ]] || return 1
+  if printf '%s\n' "$methods" | grep -Eq '(^|,)(password|keyboard-interactive)(,|$)'; then
+    printf 'Server still advertises password or keyboard-interactive authentication.\n' >&2
+    return 1
+  fi
+}
+ssh_args=(-o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=yes -i "$key_path")
 check 'HTTP 200' http_status / 200
 check 'Missing page returns 404' http_status /lab-validation-missing 404
 check 'Dotfile path returns 403' http_status /.git/config 403
 # Expand these commands on the remote Server, not on the Client.
 # shellcheck disable=SC2016
-check 'Administrator key login works' ssh "${ssh_args[@]}" "ayush@$server_ip" 'test "$(whoami)" = ayush && test "$(hostname)" = kapserver'
-check 'Root SSH denied' ssh_denied ssh "${ssh_args[@]}" "root@$server_ip" true
-check 'Regular account SSH denied' ssh_denied ssh "${ssh_args[@]}" "webuser@$server_ip" true
-check 'Password-only SSH denied' ssh_denied ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=yes -o PubkeyAuthentication=no -o PreferredAuthentications=password "ayush@$server_ip" true
+if ssh "${ssh_args[@]}" "ayush@$server_ip" 'test "$(whoami)" = ayush && test "$(hostname)" = kapserver'; then
+  printf 'PASS: Administrator key login works\n'
+  check 'Root SSH denied by authentication policy' ssh_denied ssh "${ssh_args[@]}" "root@$server_ip" true
+  check 'Regular account SSH denied by authentication policy' ssh_denied ssh "${ssh_args[@]}" "webuser@$server_ip" true
+  check 'Password and keyboard-interactive authentication not offered' password_disabled
+else
+  printf 'FAIL: Administrator key login; negative SSH checks skipped\n' >&2
+  failures=$((failures + 1))
+fi
 printf 'Failures: %s\n' "$failures"
 exit "$failures"

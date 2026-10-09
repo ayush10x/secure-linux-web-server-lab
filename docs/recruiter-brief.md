@@ -29,3 +29,9 @@ Use this wording when you can explain and reproduce the implementation. Codex as
 5. Discuss production improvements: TLS, protected keys, off-host backups, monitoring, and patch policy.
 
 See the [test evidence](verification-evidence.md) and [report](project-report.md) for supporting results and limits.
+
+## Demonstrate understanding
+
+Before an interview, reproduce key login and explain why a timeout is not authentication-denial proof; distinguish server-offered methods from effective SSH configuration. Walk through a log event and temporary restore comparison, then explain trusted-host, unencrypted-key, HTTP and same-host-backup limits in the [threat model](threat-model.md). These are preparation prompts, not an assessment of independent proficiency.
+
+Best fit: entry-level Linux administration / security-hardening discussion. This lab alone does not demonstrate SOC alert triage, incident response, threat hunting or production operating experience.

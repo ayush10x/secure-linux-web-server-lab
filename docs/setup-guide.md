@@ -12,7 +12,9 @@ The installer account is the named sudo administrator `ayush`. Keep its password
 sudo bash scripts/install-server.sh --apply
 ```
 
-This installs Nginx, OpenSSH, UFW, rsync, curl, the example site, and operations scripts. It does **not** activate SSH hardening or UFW; follow phases 4–6 below only after key login works in a second session. On the Client VM, run `bash scripts/verify-client.sh SERVER_PRIVATE_IP` after the site is installed.
+Choose **one** web installation path: use the installer above after phases 1–2 and skip the manual commands in phase 3, or omit the installer and follow phase 3. Do not run both paths against the same VM. The installer deliberately refuses an already-enabled lab site.
+
+The installer installs Nginx, OpenSSH, UFW, rsync, curl, the site, and operations scripts. It does **not** activate SSH hardening or UFW; follow phases 4–6 only after key login works in a second session. In phase 7, installer users skip script installation but run the checks. On the Client VM, run `bash scripts/verify-client.sh SERVER_PRIVATE_IP` after the site is installed.
 
 ## Summary and problem statement
 
@@ -89,6 +91,40 @@ ip -br address
 
 For a predictable IP, prefer a DHCP reservation in the hypervisor lab network. Here, the Server uses a static `192.168.56.200/24` address outside `HostNetwork`'s DHCP pool. It was set with Netplan on `enp0s9`, then accepted with `sudo netplan try --timeout 60` only after private-network ping and HTTP checks succeeded. The NAT interface `enp0s8` remains on DHCP. When reproducing, check your own DHCP pool first and use `netplan try` so connectivity changes can roll back.
 
+#### Static networking example (customize before applying)
+
+These are reproduction templates, not newly executed VM evidence. Use the VM console, not the connection you are changing. Inspect `ip -br link`, `ip -br address`, and existing `/etc/netplan/*.yaml` first; interface names may differ. Do not overlay conflicting Netplan definitions or replace working NAT settings. Save the existing configuration outside the repository before editing. The example assumes `enp0s8` is NAT and `enp0s9` is host-only, and no other file configures those interfaces:
+
+```yaml
+# Server: /etc/netplan/60-lab-network.yaml (root-owned, mode 0600)
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s8:
+      dhcp4: true
+    enp0s9:
+      dhcp4: false
+      addresses: [192.168.56.200/24]
+```
+
+Run `sudo netplan generate`, then `sudo netplan try --timeout 60` from the console. Verify NAT internet access and private-interface ping from the Client before accepting; if access fails, let the timeout revert and repair the saved configuration. Do not add a default gateway or DNS to the host-only interface.
+
+On the desktop Client, inspect `nmcli -f NAME,DEVICE connection show` first. In this lab `Wired connection 1` controls `enp0s9`; substitute your actual host-only connection, never the NAT connection:
+
+```bash
+nmcli connection show 'Wired connection 1'
+sudo nmcli connection modify 'Wired connection 1' ipv4.method manual ipv4.addresses 192.168.56.201/24 ipv4.gateway '' ipv4.dns '' ipv4.never-default yes
+sudo nmcli connection up 'Wired connection 1'
+ip -br address
+ip route
+ping -c 2 192.168.56.200
+```
+
+Keep a console and record the old NetworkManager values before changing them. For a previously DHCP-only host-only connection, rollback is `sudo nmcli connection modify 'Wired connection 1' ipv4.method auto ipv4.addresses '' ipv4.gateway '' ipv4.dns ''`, followed by `sudo nmcli connection up 'Wired connection 1'`. Restore your recorded `ipv4.never-default` value as well. A connection activation can interrupt SSH.
+
+This basic template is not the complete recovery recipe for the existing Client: competing profiles/networkd boot adoption required additional fixes. See the [operations guide's startup and snapshot recovery instructions](operations-guide.md) before restoring the Client snapshot or changing its active configuration. Validate the address again after reboot.
+
 ### 2. Create separate accounts
 
 - **Objective:** Use named accounts instead of routine root access.
@@ -96,7 +132,7 @@ For a predictable IP, prefer a DHCP reservation in the hypervisor lab network. H
 - **Actions:**
 
 ```bash
-sudo adduser webuser
+sudo adduser --disabled-password --gecos '' webuser
 id ayush
 id webuser
 sudo -l -U ayush
@@ -111,15 +147,16 @@ sudo -l -U ayush
 
 - **Objective:** Serve a site from a dedicated document root.
 - **Why:** Separating site data from package-owned defaults makes ownership and backup clear.
-- **Actions:** Copy `site/index.html` and `config/lab-site.nginx` from this project to the server, then:
+- **Actions (manual path only):** From the complete repository root on a fresh Server, run the following. Skip this block if you used `install-server.sh`. Existing lab/default-backup paths must be inspected rather than overwritten:
 
 ```bash
 sudo install -d -o root -g www-data -m 0750 /var/www/lab-site
-sudo install -o root -g www-data -m 0640 index.html /var/www/lab-site/index.html
-sudo install -o root -g root -m 0644 lab-site.nginx /etc/nginx/sites-available/lab-site
+sudo install -o root -g www-data -m 0640 site/index.html /var/www/lab-site/index.html
+sudo install -o root -g root -m 0644 config/lab-site.nginx /etc/nginx/sites-available/lab-site
 sudo ln -s /etc/nginx/sites-available/lab-site /etc/nginx/sites-enabled/lab-site
 sudo mv /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default.lab-disabled
 sudo nginx -t
+sudo systemctl enable --now nginx ssh
 sudo systemctl reload nginx
 curl -I http://127.0.0.1/
 ```
@@ -127,7 +164,7 @@ curl -I http://127.0.0.1/
 - **Expected result:** `nginx -t` succeeds and the local request returns `HTTP/1.1 200 OK`.
 - **Verify:** `curl http://127.0.0.1/` displays the page title; `systemctl is-enabled nginx` returns `enabled`.
 - **Common mistakes:** Reloading before `nginx -t`, wrong `root` path, or directories that Nginx cannot traverse.
-- **Rollback:** Move the saved default symlink back to `/etc/nginx/sites-enabled/default`, validate with `sudo nginx -t`, and reload.
+- **Rollback:** First remove only the lab enablement link: `sudo unlink /etc/nginx/sites-enabled/lab-site`. Then move the saved default symlink back to `/etc/nginx/sites-enabled/default`, validate with `sudo nginx -t`, and reload. Leaving both enabled would create duplicate `default_server` listeners. Retain site files/configuration for diagnosis. If no default symlink existed originally, do not invent one.
 
 ### 4. Configure and prove SSH key access
 
@@ -137,11 +174,27 @@ curl -I http://127.0.0.1/
 
 ```bash
 ssh-keygen -t ed25519 -a 64 -f ~/.ssh/server_ayush
+```
+
+Before the first Client connection, obtain the Server host-key fingerprint through its trusted VM console:
+
+```bash
+sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+```
+
+Then on the Client connect and compare the displayed ED25519 fingerprint with that console value before accepting it into `known_hosts`:
+
+```bash
+ssh -o HostKeyAlgorithms=ssh-ed25519 ayush@SERVER_HOST_ONLY_IP true
 ssh-copy-id -i ~/.ssh/server_ayush.pub ayush@SERVER_HOST_ONLY_IP
-ssh -i ~/.ssh/server_ayush ayush@SERVER_HOST_ONLY_IP
+ssh -o IdentitiesOnly=yes -i ~/.ssh/server_ayush ayush@SERVER_HOST_ONLY_IP
 ```
 
 Keep the private key on the client with mode `0600`; only the `.pub` file may be shared. On the server, `~/.ssh` should be `0700` and `authorized_keys` should be `0600`.
+
+Do not treat `ssh-keyscan` alone as identity verification. The automated security verifier uses `StrictHostKeyChecking=yes` and requires this prior trusted enrollment. A changed host key is a failure to investigate at the console, not a reason to disable checking. Use a key passphrase for normal interactive administration; the historical lab's unencrypted key is disclosed as a limitation.
+
+For noninteractive `BatchMode` tests with a protected key, first unlock it in your SSH agent (`ssh-add ~/.ssh/server_ayush`) through an interactive trusted terminal. Do not remove the key's passphrase to satisfy an automated check.
 
 - **Expected result:** A new client terminal logs in with the key and `sudo -v` succeeds.
 - **Verify:** Keep the original session open; open a second session and run `whoami`, `hostname`, and `sudo -v`.
@@ -156,6 +209,7 @@ Keep the private key on the client with mode `0600`; only the `.pub` file may be
 - **Actions:** Check `AllowUsers` matches the actual administrator account, then copy `config/00-lab-hardening.conf` to `/etc/ssh/sshd_config.d/` and run. The `00-` prefix precedes Ubuntu's `50-cloud-init.conf`: OpenSSH uses the first value found for these directives.
 
 ```bash
+sudo install -o root -g root -m 0644 config/00-lab-hardening.conf /etc/ssh/sshd_config.d/00-lab-hardening.conf
 sudo sshd -t
 sudo sshd -T | grep -E 'permitrootlogin|passwordauthentication|pubkeyauthentication|allowusers'
 sudo systemctl reload ssh
@@ -190,8 +244,8 @@ sudo ufw status verbose
 Install the included scripts:
 
 ```bash
-sudo install -o root -g root -m 0755 health-check.sh /usr/local/sbin/lab-health-check
-sudo install -o root -g root -m 0755 backup-site.sh /usr/local/sbin/backup-lab-site
+sudo install -o root -g root -m 0755 scripts/health-check.sh /usr/local/sbin/lab-health-check
+sudo install -o root -g root -m 0755 scripts/backup-site.sh /usr/local/sbin/backup-lab-site
 sudo /usr/local/sbin/lab-health-check
 sudo /usr/local/sbin/backup-lab-site
 ```
@@ -204,15 +258,18 @@ sudo journalctl -u nginx --since today
 sudo journalctl -k --grep='UFW' --since today
 sudo tail -n 50 /var/log/nginx/lab-site.access.log
 sudo tail -n 50 /var/log/nginx/lab-site.error.log
-sudo grep -E 'Failed password|Invalid user' /var/log/auth.log | tail
+# auth.log is optional on installations without rsyslog; the journal above
+# remains the primary SSH evidence source.
 ```
 
 Restore test: note the newest archive from `/var/backups/lab-site`, extract it into a temporary directory, compare it with the live site, and only then restore a deliberately changed test file. Never extract over the live site without first listing the archive with `tar -tzf`.
 
 ```bash
-sudo mkdir -p /tmp/lab-site-restore-test
-sudo tar -xzf /var/backups/lab-site/lab-site-YYYYMMDD-HHMMSS.tar.gz -C /tmp/lab-site-restore-test
-sudo diff -ru /var/www/lab-site /tmp/lab-site-restore-test/var/www/lab-site
+sudo sha256sum -c /var/backups/lab-site/lab-site-YYYYMMDD-HHMMSS.tar.gz.sha256
+sudo tar -tzf /var/backups/lab-site/lab-site-YYYYMMDD-HHMMSS.tar.gz
+restore_dir=$(mktemp -d /tmp/lab-site-restore.XXXXXX)
+sudo tar -xzf /var/backups/lab-site/lab-site-YYYYMMDD-HHMMSS.tar.gz -C "$restore_dir"
+sudo diff -ru /var/www/lab-site "$restore_dir/var/www/lab-site"
 ```
 
 ## Validation and acceptance

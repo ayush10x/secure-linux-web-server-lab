@@ -8,7 +8,7 @@
 
 Two Ubuntu 26.04 ARM64 VMs run in VirtualBox on an Apple M2 Pro. The Server hosts a static Nginx site and permits administration through a dedicated Ed25519 key from the Client. UFW applies default-deny inbound policy, with SSH restricted to the Client's fixed private address and HTTP restricted to the lab subnet.
 
-Positive and negative access tests passed. The site and key access survived reboot; root, password-only, and regular-account SSH access were denied. The health check passed, a SHA-256 archive check succeeded, and an extracted backup matched the live site. GitHub CI validates the repository's Bash files; local VM tests have a separate evidence record.
+Positive and negative access tests were recorded. The site and key access survived reboot; denied account probes, effective SSH settings and journal events support the policy. The original password-only BatchMode probe alone did not prove password authentication was disabled. The health check passed, a SHA-256 archive check succeeded, and an extracted backup matched the live site. CI checks Bash files and offline regression fixtures; local VM tests have a separate evidence record.
 
 ## Design
 
@@ -49,6 +49,8 @@ The [evidence record](verification-evidence.md) contains observed commands and r
 - Pausing the VMs caused stale guest time and APT metadata rejection. The Server clock was corrected and chrony restarted, preserving APT validity checks.
 
 ## Limitations and next steps
+
+The [threat model](threat-model.md) maps controls to residual risks. The [evidence interpretation](verification-evidence.md#evidence-interpretation-and-revised-tooling) separates original guest results from revised offline-tested scripts, which were not deployed/rerun in this repository-only review.
 
 This is a learning lab with static HTTP content and no public exposure. It does not include production TLS, DNS, availability testing, scheduled/off-host backups, disaster-recovery drills, vulnerability certification, or centralized monitoring. The dedicated Client key has no passphrase, which supports unattended lab tests but is a production limitation. Add key protection, TLS, configuration automation, scheduled restore checks, and external monitoring for a stronger next version.
 

@@ -54,7 +54,7 @@ table([
 ], [239, 239])
 section("Network design", "Apple M2 Pro host running VirtualBox. Both guests use NAT for package downloads and the same host-only network for private lab traffic. Fixed addresses .200 and .201 are outside the DHCP pool. UFW permits TCP 22 from the Client and TCP 80 from the lab subnet; the Mac host's SSH probe is denied.")
 section("Skills demonstrated", "Linux accounts and permissions; systemd service management; Netplan and NetworkManager; OpenSSH policy validation; UFW; log interpretation; Bash automation; checksum-backed recovery; GitHub CI and technical documentation.")
-section("Scope", "Private-network learning lab serving static HTTP content. No public endpoint, production TLS, high availability, or production operating-experience claim.")
+section("Scope", "Private-network learning lab serving static HTTP. No public endpoint, production TLS, high availability or production-experience claim. The trusted Mac/Client and source-IP restriction do not defend against host or key compromise; see the threat model.")
 
 story.append(PageBreak())
 story.append(p("Validation and controls", "LabTitle"))
@@ -62,7 +62,7 @@ table([
     ["Test", "Observed result"],
     ["Client web access", "HTTP 200; missing page 404; requests appear in the site's log."],
     ["Administrator key + sudo", "Fresh key session authenticates ayush; sudo returns root."],
-    ["Negative SSH tests", "Root, password-only, and webuser access denied (exit 255)."],
+    ["SSH policy evidence", "Effective daemon settings disable root/password/interactive access; account-denial logs and Client probes support this."],
     ["Firewall restriction", "Default deny incoming; only the intended SSH and HTTP rules. Mac-host SSH times out with UFW block evidence."],
     ["Health and recovery", "Health exit 0; SHA-256 archive check OK; temporary restore diff exit 0."],
     ["Server reboot", "Client HTTP 200 and fresh key access return; root/password denials persist."],
@@ -70,7 +70,7 @@ table([
 ], [146, 332])
 section("Security decisions", "The named sudo administrator is separate from a locked regular account. Site ownership is root:www-data with a 0750 directory and 0640 HTML file. The Client SSH directory and Server authorized_keys use 0700 and 0600 permissions. No private keys or passwords are published.")
 section("SSH precedence", "The lab policy is installed as 00-lab-hardening.conf, before Ubuntu's 50-cloud-init.conf. OpenSSH uses the first value obtained for these directives, so effective settings were inspected with sshd -T before reloading. Key login and sudo were proven before password authentication was disabled.")
-section("Evidence boundary", "GitHub CI checks Bash syntax, ShellCheck, and required artifacts. The VM access, firewall, restoration, and reboot tests were executed locally and recorded separately. This report summarizes selected observed outputs; it is not a security certification.")
+section("Evidence boundary", "CI checks Bash syntax, ShellCheck, required artifacts and offline fixtures. VM tests are separate. The original BatchMode password probe alone did not prove policy; effective settings support it. Revised tests reject transport/host-key failures and inspect offered methods; new coverage is offline, not a guest rerun or security certification.")
 
 story.append(PageBreak())
 story.append(p("Operations and lessons", "LabTitle"))
