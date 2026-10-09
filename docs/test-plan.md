@@ -1,6 +1,6 @@
 # Test Plan
 
-Record date, tester, command/action, expected result, actual result, and pass/fail for every case.
+Completed results are in [lab-record.md](lab-record.md), supported by [verification-evidence.md](verification-evidence.md). Execute `scripts/verify-security.sh` on the authorized Client for repeatable HTTP and SSH tests.
 
 | ID | Test | Expected result |
 |---|---|---|

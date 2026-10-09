@@ -23,3 +23,7 @@ jobs:
           test -s config/lab-site.nginx
           test -s docs/test-plan.md
           test -s docs/report-template.md
+          test -s docs/project-report.md
+          test -s docs/verification-evidence.md
+          test -s config/00-lab-hardening.conf
+          test -s output/pdf/secure-linux-web-server-report.pdf

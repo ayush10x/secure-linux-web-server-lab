@@ -1,5 +1,7 @@
 # Evidence Checklist
 
+Completed command evidence is recorded in [verification evidence](verification-evidence.md) and [the lab record](lab-record.md). The following original checklist describes evidence categories, not missing work. VM configuration, accounts, service state, permissions, sockets, logs, positive/negative access, health, backup recovery and Server reboot were checked. Client web access was tested with curl, not a desktop-browser screenshot; the Client GUI limitation is disclosed.
+
 - [ ] VM settings showing isolated/private network (redact host details if needed)
 - [ ] `hostnamectl` and `ip -br address`
 - [ ] Separate account and group results from `id`

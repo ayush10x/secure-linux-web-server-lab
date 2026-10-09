@@ -2,6 +2,26 @@
 
 This is a factual record of work performed for this lab. Planned steps are not recorded as completed. Secrets and private keys are excluded.
 
+## Completion session: 10 October 2026 (Asia/Kolkata)
+
+| Action | Why | Observed result |
+|---|---|---|
+| Resumed both VMs and authenticated to the Client using the clarified credential | Continue after the user's Wi-Fi pause | Client shell established; existing disk preserved; no credential recorded |
+| Set Client host-only IPv4 to `192.168.56.201/24`, retaining NAT as the default route | Stable firewall source outside the DHCP pool | Client `.201` could reach Server `.200` |
+| Created a dedicated Client Ed25519 key and installed only its public key on the Server | Prove working administrator access before hardening | Fresh key login as `ayush` and sudo to root passed; private key stayed on Client |
+| Used `00-lab-hardening.conf`, checked effective SSH settings and reloaded SSH | OpenSSH's first-value precedence requires the lab policy before Ubuntu's cloud-init drop-in | Password, keyboard-interactive and root access disabled; `AllowUsers ayush`; fresh key access passed |
+| Enabled UFW default-deny incoming, allowing SSH only from `.201` and HTTP from the private subnet | Independently enforce network restrictions | Client access passed; Mac-host SSH timed out with a matching UFW block log |
+| Reviewed positive/negative access, logs, sockets, accounts and file modes | Validate actual behavior as well as configuration | HTTP 200, absent page 404, dotfile 403; root, regular-account and password-only SSH denied; intended listeners and restricted file permissions confirmed |
+| Corrected stale UTC after pause, restarted chrony and refreshed/upgraded APT | Restore package time checks without bypassing validation | APT exit 0; four packages deferred by Ubuntu phasing; dpkg audit empty. NTP sources remained unselected at final inspection; synchronization is a documented limitation |
+| Created a backup, verified SHA-256 and compared a temporary extraction with the live site | Demonstrate recovery without overwriting the site | Checksum OK; diff exit 0; archives root-only |
+| Rebooted Server and repeated access, denial, firewall and health checks | Verify persistent configuration | HTTP 200 and fresh key access returned; denials persisted; health exit 0 |
+| Added and ran the Client security verifier | Make acceptance checks reproducible | Seven checks passed; failures 0; exit 0 |
+| Wrote recruiter brief, report, sanitized evidence, setup/operations guides and three-page PDF | Present evidence and limitations clearly | PDF rendered and all pages visually inspected; assisted-project context and Client GUI limitation disclosed |
+
+## Earlier setup history
+
+Final snapshot attempt: Server `validated-secure-lab` and Client `validated-client` live snapshots stalled and were safely cancelled. VirtualBox then reported Running while its execution logs showed SUSPENDED. Normal pause/resume and ACPI shutdown did not restore guest networking. Hard reset was blocked by auto-review due to unsaved-state/filesystem risk; explicit user approval was requested. No completed final snapshot is claimed.
+
 | Date (Asia/Kolkata) | Action | Why | Observed result |
 |---|---|---|---|
 | 2026-10-09 | Inspected existing project kit and VirtualBox inventory | Identify the starting state before changing files or VMs | Project kit present; seven VMs found; target Server VM powered off |
