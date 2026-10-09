@@ -2,6 +2,25 @@
 
 Validation completed on 10 October 2026 (Asia/Kolkata). These are selected, sanitized results observed on the actual guests, rather than simulated outputs. Earlier logs used the paused guest's stale 9 October UTC clock; time was corrected before the final package refresh and reboot.
 
+## Final recovery and Client reboot check
+
+Live snapshotting stalled. After explicit approval for hard-reset recovery, a cold restart restored both guests. Powered-off snapshots succeeded (details in the action log). Client reboot exposed early networkd DHCP adoption; the scoped NetworkManager startup fix in `config/90-lab-client-network.conf` was installed, profile priority corrected, and another Client reboot was tested:
+
+```text
+enp0s9 UP 192.168.56.201/24
+PASS: HTTP 200
+PASS: Missing page returns 404
+PASS: Dotfile path returns 403
+PASS: Administrator key login works
+PASS: Root SSH denied
+PASS: Regular account SSH denied
+PASS: Password-only SSH denied
+Failures: 0
+final_verifier_exit=0
+```
+
+Server health checks all passed again, including Nginx, SSH, UFW, local HTTP and filesystem usage (34%). `dpkg --audit` was empty and `systemctl --failed` showed zero failed units on both guests after cold recovery. These checks are not a full offline filesystem scan. Kernel error-level logs included VirtualBox display/PCI messages; a completely error-free kernel log is not claimed. Both guests were left running headlessly.
+
 ## Client web and key access
 
 Client private interface: `enp0s9 192.168.56.201/24`.

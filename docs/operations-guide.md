@@ -52,4 +52,14 @@ Use `netplan try` for Server network changes. The Client's host-only connection 
 
 Check the guest clock before updating, especially after a long VirtualBox pause. This Server uses chrony. Inspect `timedatectl` and `chronyc tracking`; correct stale time before retrying repository metadata validation. Keep APT validity and signature checks enabled.
 
-Run `sudo apt update` and `sudo apt upgrade`, review deferred packages, and reboot when required. Repeat HTTP, key login, firewall, and health checks afterwards. Use `clean-install` for baseline rollback. Final live snapshots stalled and were cancelled; do not assume a final configured-state recovery point exists.
+Run `sudo apt update` and `sudo apt upgrade`, review deferred packages, and reboot when required. Repeat HTTP, key login, firewall, and health checks afterwards. Use `clean-install` for baseline rollback. Powered-off snapshots `validated-secure-lab` (Server) and `validated-client` (Client) succeeded after live snapshotting stalled. Avoid live snapshots on this setup.
+
+The Client snapshot predates the profile-priority fix. After restoring it, apply these commands from the Client console or its old DHCP address:
+
+```bash
+sudo nmcli connection modify 'Wired connection 1' connection.autoconnect yes connection.autoconnect-priority 100 connection.interface-name enp0s9
+sudo nmcli connection modify enp0s9 connection.autoconnect no
+sudo nmcli connection up 'Wired connection 1'
+```
+
+This Client also inherited DHCP configuration from dracut/systemd-networkd at boot, which NetworkManager adopted before choosing a persistent profile. Install `config/90-lab-client-network.conf` as `/etc/NetworkManager/conf.d/90-lab-client-network.conf` (0644) on the Client. Its device-specific `keep-configuration=no` tells NetworkManager to select the saved host-only profile rather than adopt that early DHCP state. NetworkManager is the intended desktop network manager; the ordinary networkd service/socket/wait-online units were disabled on this Client. Reboot and check the resulting address before relying on SSH firewall access. See the upstream [NetworkManager configuration reference](https://networkmanager.dev/docs/api/1.48/NetworkManager.conf.html).

@@ -20,7 +20,15 @@ This is a factual record of work performed for this lab. Planned steps are not r
 
 ## Earlier setup history
 
-Final snapshot attempt: Server `validated-secure-lab` and Client `validated-client` live snapshots stalled and were safely cancelled. VirtualBox then reported Running while its execution logs showed SUSPENDED. Normal pause/resume and ACPI shutdown did not restore guest networking. Hard reset was blocked by auto-review due to unsaved-state/filesystem risk; explicit user approval was requested. No completed final snapshot is claimed.
+Final snapshot recovery: Server and Client live snapshots stalled and were cancelled. VirtualBox reported Running while its execution logs showed SUSPENDED. Normal pause/resume and ACPI shutdown did not restore networking. Auto-review blocked hard reset; the user explicitly approved the state-loss/filesystem risk. Warm reset left invalid Virtio queues, so both named VMs were powered off and cold-started. Powered-off snapshots succeeded: Server `validated-secure-lab` (`0efb4985-710e-493e-8654-b65cbd49c5cb`) and Client `validated-client` (`d7cefa74-48eb-41a8-9ff2-5691818d4665`). Server HTTP and all seven Client security checks passed again; both guests had empty dpkg audits and no failed systemd units. Server kernel logs contained VirtualBox display/PCI messages, not a claimed clean kernel log.
+
+Client cold boot selected the old DHCP profile instead of the static profile because `Wired connection 1` had autoconnect priority -999. Set its priority to 100, bound it to `enp0s9`, and disabled autoconnect for the competing `enp0s9` profile. Reactivated the fixed connection and repeated the seven security checks successfully. The Client snapshot predates this priority fix: apply it again after restoring that snapshot.
+
+Published the recruiter documents and PDF, then made the repository public after explicit user approval. CI initially flagged indirect function calls and intentional remote-shell expansion; added scoped, explained ShellCheck annotations. Run `37992413462` passed for commit `d1349b9`.
+
+Further Client reboot diagnosis showed that priority alone was insufficient: systemd-networkd's dracut default configured DHCP before NetworkManager, which then assumed the existing address. Added the Client-only, device-scoped `keep-configuration=no` configuration and disabled the ordinary networkd service/socket/wait-online units so NetworkManager can select its persistent static profile. This fix also postdates the Client snapshot.
+
+Final Client reboot preserved `192.168.56.201/24`. All seven Client checks passed again with verifier exit 0; Server health checks all passed, dpkg audit remained empty and systemd reported zero failed units. Both VMs were left running headlessly. Updated the recovery evidence, operations instructions, action log and visually checked PDF to reflect the final observed state.
 
 | Date (Asia/Kolkata) | Action | Why | Observed result |
 |---|---|---|---|
