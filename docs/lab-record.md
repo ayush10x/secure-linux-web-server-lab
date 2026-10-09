@@ -10,7 +10,7 @@ Fill this out with observations from your own VMs. Leave secrets out of GitHub.
 | NAT IP | `10.0.2.15/24` on `enp0s8` | Pending |
 | Host-only IP | Static `192.168.56.200/24` on `enp0s9`, verified by host ping and HTTP 200 | `192.168.56.2`, observed by host ARP/ping/SSH probe; guest confirmation pending |
 | Host-only network | `HostNetwork` | `HostNetwork` |
-| Administrator account | `ayush`, confirmed in `sudo` group with `id` | Login screen lists `ayush`; SSH login pending |
+| Administrator account | `ayush`, confirmed in `sudo` group with `id` | Login screen lists `ayush`; SSH authentication with the supplied credential was denied; no further attempts made |
 | Regular account | `webuser`, no sudo membership, password locked | N/A |
 | Snapshot name/date | `clean-install`, 2026-10-09 (UUID `033862de-0f8f-480f-a849-acccfd2622ee`) | Pending |
 
@@ -27,6 +27,6 @@ Fill this out with observations from your own VMs. Leave secrets out of GitHub.
 | Reboot persistence | Pass | Server rebooted to the VirtualBox firmware/Ubuntu boot path; `http://192.168.56.200/` returned HTTP 200 afterward |
 | Backup creation and temporary restoration | Pass | Archive created, extracted under `/tmp/lab-restore-check`, `diff -ru` returned no differences |
 
-The health check currently reports UFW inactive, as expected before Client key access and firewall rules are validated. Do not mark its overall result passed yet. The Client boots headlessly with 2 virtual CPUs, but its GUI launch still stalls; SSH is reachable on its host-only address.
+The health check currently reports UFW inactive, as expected before Client key access and firewall rules are validated. Do not mark its overall result passed yet. The Client boots headlessly with 2 virtual CPUs, but its GUI launch still stalls; SSH is reachable on its host-only address. Client-side tests require a successful `ayush` login to that VM.
 
 Do not mark a test passed until it has run on the named VMs.
