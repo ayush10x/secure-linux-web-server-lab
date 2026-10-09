@@ -129,7 +129,7 @@ The four deferred packages were `libopeniscsiusr`, `open-iscsi`, `python3-softwa
 
 ## Evidence interpretation and revised tooling
 
-The seven-check guest output above records the original verifier before the 10 October recruiter-driven revision. Its password-only BatchMode attempt could not independently prove password authentication was disabled; exit 255 alone could also represent transport or host-key error. Recorded effective `sshd -T` settings and denial journal entries remain evidence for actual guest policy. Root/webuser probes with the administrator key alone do not isolate each denial directive.
+The seven-check guest output above records the original verifier before the 10 October script revision. Its password-only BatchMode attempt could not independently prove password authentication was disabled; exit 255 alone could also represent transport or host-key error. Recorded effective `sshd -T` settings and denial journal entries remain evidence for actual guest policy. Root/webuser probes with the administrator key alone do not isolate each denial directive.
 
 The revised verifier pins the specified identity, requires positive administrator access before negative SSH checks, and requires explicit authentication-denial diagnostics rather than any exit 255. It inspects verbose server-offered methods without submitting a password and fails if password or keyboard-interactive is advertised. Prior trusted host-key enrollment is required. These probes complement effective daemon settings; they are not certification of every SSH configuration.
 

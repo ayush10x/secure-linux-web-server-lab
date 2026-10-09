@@ -22,8 +22,6 @@ For a 60-second review: read the [recruiter brief](docs/recruiter-brief.md), ins
 | [Action and decision log](docs/action-log.md) | What was done, why, and the observed result |
 | [Threat model](docs/threat-model.md) | Assets, trust boundaries, controls and residual risks |
 
-Two [simulated recruiter reviews](docs/recruiter-review.md) record AI assessments and resulting improvements, not employer feedback.
-
 ## Architecture
 
 ```mermaid

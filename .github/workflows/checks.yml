@@ -30,7 +30,6 @@ jobs:
           test -s site/index.html
           test -s config/lab-site.nginx
           test -s docs/test-plan.md
-          test -s docs/report-template.md
           test -s docs/project-report.md
           test -s docs/verification-evidence.md
           test -s config/00-lab-hardening.conf

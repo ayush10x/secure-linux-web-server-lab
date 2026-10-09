@@ -54,17 +54,6 @@ Server VM (192.168.56.200, hostname kapserver)
 
 Required software: `openssh-server`, `nginx`, `ufw`, `rsync`, and `curl`. Use a VM snapshot named `clean-install` before starting. The ARM64 installer is required for Apple Silicon VirtualBox.
 
-## Milestones and schedule
-
-| Phase | Outcome | Time |
-|---|---|---:|
-| 1. Baseline | Network, hostname, updates, accounts | 1.5 h |
-| 2. Web service | Nginx and static site work locally | 1.5 h |
-| 3. Remote access | SSH keys work in a second session | 1.5 h |
-| 4. Hardening | SSH and UFW safely restricted | 1.5 h |
-| 5. Operations | Logs, backup, restore, health check | 2 h |
-| 6. Evidence | Tests, screenshots, report | 1-2 h |
-
 ## Implementation
 
 Replace placeholder addresses before running commands. Server IPv4 is `192.168.56.200`; Client IPv4 is `192.168.56.201`. Both are verified, static, and outside the lab DHCP pool. Check your own network before reusing them.
@@ -296,7 +285,7 @@ Use [test-plan.md](test-plan.md) and run `bash scripts/verify-security.sh 192.16
 
 ## Evidence and final report
 
-See [evidence-checklist.md](evidence-checklist.md), [project-report.md](project-report.md), and [verification-evidence.md](verification-evidence.md) for the completed portfolio record.
+See [project-report.md](project-report.md) and [verification-evidence.md](verification-evidence.md) for the completed project record.
 
 ## Version 2 ideas
 
