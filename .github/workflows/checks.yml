@@ -1,0 +1,25 @@
+name: Project checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Bash syntax
+        run: bash -n scripts/*.sh
+      - name: Lint Bash scripts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck scripts/*.sh
+      - name: Verify required project files
+        run: |
+          test -s README.md
+          test -s site/index.html
+          test -s config/lab-site.nginx
+          test -s docs/test-plan.md
+          test -s docs/report-template.md

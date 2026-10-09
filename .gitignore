@@ -1,0 +1,9 @@
+# Never publish credentials, raw VM evidence, or generated backups.
+*.key
+*.pem
+id_*
+!id_*.pub
+evidence/raw/
+backups/
+*.log
+.DS_Store
