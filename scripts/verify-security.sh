@@ -18,11 +18,15 @@ check() {
     failures=$((failures + 1))
   fi
 }
+# Called indirectly by check(), which invokes its argument list.
+# shellcheck disable=SC2317
 http_status() {
   local path=$1 expected=$2 actual
   actual=$(curl --silent --show-error --max-time 5 --output /dev/null --write-out '%{http_code}' "http://$server_ip$path") || return 1
   [[ $actual == "$expected" ]]
 }
+# Called indirectly by check(), which invokes its argument list.
+# shellcheck disable=SC2317
 ssh_denied() {
   "$@"
   local status=$?
@@ -32,6 +36,8 @@ ssh_args=(-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=yes -i "
 check 'HTTP 200' http_status / 200
 check 'Missing page returns 404' http_status /lab-validation-missing 404
 check 'Dotfile path returns 403' http_status /.git/config 403
+# Expand these commands on the remote Server, not on the Client.
+# shellcheck disable=SC2016
 check 'Administrator key login works' ssh "${ssh_args[@]}" "ayush@$server_ip" 'test "$(whoami)" = ayush && test "$(hostname)" = kapserver'
 check 'Root SSH denied' ssh_denied ssh "${ssh_args[@]}" "root@$server_ip" true
 check 'Regular account SSH denied' ssh_denied ssh "${ssh_args[@]}" "webuser@$server_ip" true
