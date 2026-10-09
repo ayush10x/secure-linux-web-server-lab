@@ -4,7 +4,7 @@
 
 This repository contains runnable files and a guided build. The actual test record is in [docs/lab-record.md](docs/lab-record.md), while [docs/action-log.md](docs/action-log.md) records actions taken and why. Test rows stay marked pending until they are observed on both VMs.
 
-On an Apple Silicon Mac, use an ARM64 Ubuntu Server installer. The existing VirtualBox machines in this lab are named `ubunutu server` (Server VM) and `ubuntu 26.04 ` (Client VM). Those are VirtualBox labels; Linux hostnames can be `server` and `client`.
+On an Apple Silicon Mac, use an ARM64 Ubuntu Server installer. The existing VirtualBox machines in this lab are named `ubunutu server` (Server VM) and `ubuntu 26.04 ` (Client VM). Those are VirtualBox labels; the installed Server VM booted with Linux hostname `kapserver`.
 
 The installer account should be a named sudo administrator; this guide uses `labadmin`. Set its password yourself and do not put it in this repository. If you chose a different username, replace `labadmin` in the commands and SSH policy before applying them. With working NAT and host-only networking, copy this repository to the Server VM, take a `clean-install` snapshot, then run:
 
@@ -28,13 +28,21 @@ Included: one Ubuntu Server 26.04 LTS server, one Linux client, Nginx, OpenSSH, 
 
 Excluded: public DNS, production TLS certificates, internet exposure, databases, application frameworks, load balancing, and penetration testing outside the private lab.
 
+## Prerequisites and VM sizing
+
+- Host: Apple Silicon Mac (this lab uses an M2 Pro), VirtualBox 7.2 or later, and enough free RAM/storage for both guests. Do not use an AMD64 Ubuntu ISO on Apple Silicon VirtualBox.
+- Server VM: Ubuntu Server 26.04 ARM64, 2 virtual CPUs, 3 GB RAM, 25 GB dynamically allocated virtual disk. The existing `ubunutu server` VM matches this sizing.
+- Client VM: an ARM64 Linux installation, 2 virtual CPUs and 4 GB RAM are sufficient for this lab; allow at least 20 GB disk. The existing `ubuntu 26.04 ` VM has 5 CPUs, about 4.4 GB RAM, and a 25 GB disk; preserve its existing installation.
+- Networking on **both** VMs: Adapter 1 = NAT for package downloads; Adapter 2 = the same VirtualBox host-only network (`HostNetwork`) for SSH and HTTP lab traffic. Confirm the assigned private addresses with `ip -br address` on each guest before substituting them into commands.
+- Keep installer ISO images and any VM snapshots outside the Git repository. Never publish passwords, private SSH keys, guest disk images, or raw logs containing secrets.
+
 ## Architecture
 
 ```text
-Admin/client VM (192.168.56.10)
+Client VM (CLIENT_HOST_ONLY_IP)
        | SSH 22, HTTP 80
        v
-Server VM (example: 192.168.56.20, hostname server)
+Server VM (SERVER_HOST_ONLY_IP, hostname kapserver)
   +-- OpenSSH: remote administration
   +-- UFW: default deny incoming
   +-- Nginx: /var/www/lab-site
@@ -66,7 +74,7 @@ Replace example IP addresses and usernames before running commands. Commands lab
 - **Actions (server console):** create a VM snapshot, then run:
 
 ```bash
-sudo hostnamectl set-hostname server
+hostnamectl
 sudo apt update
 sudo apt upgrade
 sudo apt install openssh-server nginx ufw rsync curl
@@ -74,7 +82,7 @@ hostnamectl
 ip -br address
 ```
 
-- **Expected result:** Hostname is `server`; the private adapter has the expected address; packages install successfully.
+- **Expected result:** Hostname is `kapserver`; the private adapter has the expected address; packages install successfully. If you intentionally rename the host, use `sudo hostnamectl set-hostname NEW_NAME` and update the record.
 - **Verify:** `systemctl is-active ssh nginx` and `systemctl is-enabled ssh nginx` both report active/enabled.
 - **Common mistakes:** Updating the wrong VM, confusing NAT and private-adapter addresses, or continuing after package errors.
 - **Rollback:** Restore the `clean-install` snapshot if the baseline is unusable.
@@ -165,7 +173,7 @@ sudo systemctl reload ssh
 ```bash
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
-sudo ufw allow from 192.168.56.10 to any port 22 proto tcp comment 'SSH from admin VM'
+sudo ufw allow from CLIENT_HOST_ONLY_IP to any port 22 proto tcp comment 'SSH from Client VM'
 sudo ufw allow from 192.168.56.0/24 to any port 80 proto tcp comment 'HTTP lab network'
 sudo ufw logging medium
 sudo ufw enable
@@ -173,7 +181,7 @@ sudo ufw status verbose
 ```
 
 - **Expected result:** Incoming policy is deny; only lab SSH and HTTP rules are present.
-- **Verify:** From the client, start a new SSH session and run `curl -I http://192.168.56.20/`. On the server, run `sudo ss -lntup` and confirm only intended listeners.
+- **Verify:** From the client, start a new SSH session and run `curl -I http://SERVER_HOST_ONLY_IP/` with the observed address substituted. On the server, run `sudo ss -lntup` and confirm only intended listeners.
 - **Common mistakes:** Enabling UFW before adding SSH, using the wrong client IP, or accidentally allowing a service from `Anywhere`.
 - **Rollback:** At the VM console run `sudo ufw disable`, correct rules, then repeat verification before re-enabling.
 
