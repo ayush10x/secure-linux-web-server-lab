@@ -10,7 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate Bash syntax
-        run: bash -n scripts/*.sh
+        run: |
+          for script in scripts/*.sh; do
+            bash -n "$script"
+          done
       - name: Lint Bash scripts
         run: |
           sudo apt-get update
