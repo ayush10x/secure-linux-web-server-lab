@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -u
+export LC_ALL=C
 
 failures=0
 
@@ -19,7 +20,7 @@ check "Nginx is enabled" systemctl is-enabled --quiet nginx
 check "SSH is active" systemctl is-active --quiet ssh
 check "UFW is active" bash -c "ufw status | grep -q '^Status: active$'"
 # Called indirectly through check().
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 http_200() {
   local status
   status=$(curl --silent --show-error --max-time 5 --output /dev/null --write-out '%{http_code}' http://127.0.0.1/) || return 1

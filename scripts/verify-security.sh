@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Run on the authorized Client VM after Server hardening.
 set -u
+export LC_ALL=C
 server_ip=${1:-}
 key_path=${2:-$HOME/.ssh/server_lab}
 admin_user=${3:-labadmin}
-if [[ ! $server_ip =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ || ! -f $key_path || ! $admin_user =~ ^[a-z_][a-z0-9_-]{0,31}$ || $admin_user == root || $admin_user == webuser ]]; then
+ipv4_regex='^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$'
+if [[ ! $server_ip =~ $ipv4_regex || ! -f $key_path || ! $admin_user =~ ^[a-z_][a-z0-9_-]{0,31}$ || $admin_user == root || $admin_user == webuser ]]; then
   printf 'Usage: %s SERVER_IPV4 CLIENT_PRIVATE_KEY [ADMIN_USER]\n' "$0" >&2
   printf 'ADMIN_USER defaults to labadmin; use your named administrator, not root or webuser.\n' >&2
   exit 64
@@ -21,14 +23,14 @@ check() {
   fi
 }
 # Called indirectly by check(), which invokes its argument list.
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 http_status() {
   local path=$1 expected=$2 actual
   actual=$(curl --silent --show-error --max-time 5 --output /dev/null --write-out '%{http_code}' "http://$server_ip$path") || return 1
   [[ $actual == "$expected" ]]
 }
 # Called indirectly by check(), which invokes its argument list.
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 ssh_denied() {
   local output status
   output=$("$@" 2>&1)
@@ -37,7 +39,7 @@ ssh_denied() {
   [[ $status == 255 && $output == *"Permission denied ("* ]]
 }
 # No password is submitted: inspect the methods offered by the remote daemon.
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 password_disabled() {
   local output status methods
   output=$(ssh -v -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=yes -o PubkeyAuthentication=no -o PreferredAuthentications=password,keyboard-interactive "$admin_user@$server_ip" true 2>&1)

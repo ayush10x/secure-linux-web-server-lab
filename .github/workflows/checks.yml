@@ -10,18 +10,18 @@ permissions:
 jobs:
   scripts:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
       - name: Validate Bash syntax
         run: |
           for script in scripts/*.sh; do
             bash -n "$script"
           done
       - name: Lint Bash scripts
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck
-          shellcheck scripts/*.sh
+        run: shellcheck scripts/*.sh
       - name: Offline script regression fixtures (not VM acceptance tests)
         run: python3 -m unittest discover -s tests -v
       - name: Verify required project files

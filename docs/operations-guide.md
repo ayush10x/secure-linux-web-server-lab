@@ -27,6 +27,8 @@ This virtual host uses `lab-site.access.log`, rather than the packaged default a
 
 ## Backup and restoration
 
+The repository backup script creates files under `umask 077`, rejects timestamp collisions with exit code 3, and retains the newest 10 archives and their matching checksums. Copy older backups off-host before they reach this retention limit. This refinement has offline coverage only; it has not been rerun on the original guests.
+
 ```bash
 sudo /usr/local/sbin/backup-lab-site
 sudo ls -l /var/backups/lab-site
@@ -37,10 +39,14 @@ Choose an exact archive path and inspect it before extraction. Replace `ARCHIVE`
 ```bash
 sudo sha256sum -c ARCHIVE.sha256
 sudo tar -tzf ARCHIVE
-restore_dir=$(mktemp -d /tmp/lab-restore.XXXXXX)
-sudo tar -xzf ARCHIVE -C "$restore_dir"
+restore_dir=$(mktemp -d /tmp/lab-restore.XXXXXX) || exit 1
+chmod 0700 "$restore_dir"
+sudo tar --extract --gzip --no-same-owner --no-same-permissions --file ARCHIVE -C "$restore_dir"
 sudo diff -ru /var/www/lab-site "$restore_dir/var/www/lab-site"
+sudo rm -rf -- "$restore_dir"
 ```
+
+Record the comparison result before cleanup. Extract only a reviewed backup from a trusted source: these tar flags do not validate archive paths, symlinks, or authenticity.
 
 For a live restoration, back up the current site first. Install the reviewed restored `index.html` with owner `root`, group `www-data`, and mode `0640`; run `nginx -t`, reload Nginx, and confirm Client HTTP 200. The backup covers site content, not the whole VM or system configuration. Production recovery needs off-host copies.
 

@@ -256,10 +256,14 @@ Restore test: note the newest archive from `/var/backups/lab-site`, extract it i
 ```bash
 sudo sha256sum -c /var/backups/lab-site/lab-site-YYYYMMDD-HHMMSS.tar.gz.sha256
 sudo tar -tzf /var/backups/lab-site/lab-site-YYYYMMDD-HHMMSS.tar.gz
-restore_dir=$(mktemp -d /tmp/lab-site-restore.XXXXXX)
-sudo tar -xzf /var/backups/lab-site/lab-site-YYYYMMDD-HHMMSS.tar.gz -C "$restore_dir"
+restore_dir=$(mktemp -d /tmp/lab-site-restore.XXXXXX) || exit 1
+chmod 0700 "$restore_dir"
+sudo tar --extract --gzip --no-same-owner --no-same-permissions --file /var/backups/lab-site/lab-site-YYYYMMDD-HHMMSS.tar.gz -C "$restore_dir"
 sudo diff -ru /var/www/lab-site "$restore_dir/var/www/lab-site"
+sudo rm -rf -- "$restore_dir"
 ```
+
+Record the comparison result before cleanup. Use only reviewed backups from a trusted source; the extraction flags do not validate archive paths, symlinks, or authenticity. The current backup script retains the newest 10 archives and checksums and rejects a timestamp collision with exit code 3. Its restrictive creation mask and retention policy are repository refinements, not newly observed guest behavior.
 
 ## Validation and acceptance
 

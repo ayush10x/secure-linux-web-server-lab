@@ -1,5 +1,13 @@
 # Verification evidence
 
+## Repository hardening update: 16 October 2026
+
+The current workflow, SSH/Nginx templates, backup script, locale/IPv4 handling, offline fixtures, and restore documentation include repository hardening refinements. These changes have not been deployed or rerun on the original guest VMs. The outputs below and existing PDF record the earlier guest validation; they do not establish that the new SSH directives, response headers/method restrictions, backup retention, or extraction commands passed guest acceptance tests. Repository syntax, ShellCheck, and offline fixtures are separate checks.
+
+Local repository checks passed: Bash syntax for every shell script, ShellCheck 0.11.0 with zero diagnostics, and 13 offline unittest methods. The added fixtures cover invalid/leading-zero IPv4 rejection, locale enforcement, backup collisions, retention, and private file modes. Backup fixtures substitute temporary paths and the root guard and mock ownership installation; they do not validate root ownership or guest deployment.
+
+## Historical guest validation
+
 Validation completed on 10 October 2026 (Asia/Kolkata). These are selected, sanitized results observed on the actual guests, rather than simulated outputs. Earlier logs used the paused guest's stale 9 October UTC clock; time was corrected before the final package refresh and reboot.
 
 For reuse and privacy, administrator identities, home-directory paths, hostnames, and key filenames are normalized to `labadmin`, `server`/`client`, and `server_lab`. These are aliases in historical excerpts, not required names or newly executed commands. Choose your own names and substitute them consistently when reproducing the lab.

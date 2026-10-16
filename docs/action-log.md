@@ -1,5 +1,11 @@
 # Action log and reasons
 
+## Repository security hardening: 16 October 2026
+
+Pinned checkout to the requested v4.2.2 SHA with credential persistence disabled, capped the CI job at five minutes, and used the runner's existing ShellCheck. Added explicit public-key authentication, forwarding/tunnel restrictions, and SSH session/liveness settings. Added Nginx banner suppression, static-site method restrictions, CSP, and Permissions-Policy. Backup creation now uses `umask 077`, rejects timestamp collisions, and retains the newest 10 archive/checksum pairs. Verification scripts use the C locale and reject invalid or leading-zero IPv4 octets; offline fixtures cover those rejections. Temporary restore examples use a private directory, reduced ownership/permission restoration, and cleanup. Verification covers repository syntax, lint, and offline behavior only; these refinements were not deployed or rerun on the guest VMs. Historical evidence and the existing PDF remain the earlier validation record.
+
+Local verification: all Bash syntax checks passed, ShellCheck 0.11.0 reported zero diagnostics, all 13 offline unittest methods passed, and the diff/status review showed only the 12 intended repository files. Backup fixtures use temporary paths and a substituted privilege guard; they verify collision, retention, and file-mode behavior without proving guest execution or root ownership. The supplied remediation guide and downloaded verification tools are outside the tracked project.
+
 This is a factual record of work performed for this lab. Planned steps are not recorded as completed. Secrets and private keys are excluded.
 
 Original personal usernames, VM labels, and hostnames are represented by neutral aliases (`labadmin`, `Server`/`Client`, and `server`/`client`). Historical outcomes are retained; these aliases do not mean the original guests were renamed.

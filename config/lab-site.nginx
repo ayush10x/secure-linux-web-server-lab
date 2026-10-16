@@ -3,6 +3,8 @@ server {
     listen [::]:80 default_server;
     server_name _;
 
+    server_tokens off;
+
     root /var/www/lab-site;
     index index.html;
 
@@ -10,6 +12,9 @@ server {
     error_log  /var/log/nginx/lab-site.error.log;
 
     location / {
+        limit_except GET HEAD {
+            deny all;
+        }
         try_files $uri $uri/ =404;
     }
 
@@ -20,4 +25,6 @@ server {
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
 }
