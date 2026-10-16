@@ -2,6 +2,8 @@
 
 Validation completed on 10 October 2026 (Asia/Kolkata). These are selected, sanitized results observed on the actual guests, rather than simulated outputs. Earlier logs used the paused guest's stale 9 October UTC clock; time was corrected before the final package refresh and reboot.
 
+For reuse and privacy, administrator identities, home-directory paths, hostnames, and key filenames are normalized to `labadmin`, `server`/`client`, and `server_lab`. These are aliases in historical excerpts, not required names or newly executed commands. Choose your own names and substitute them consistently when reproducing the lab.
+
 ## Final recovery and Client reboot check
 
 Live snapshotting stalled. After explicit approval for hard-reset recovery, a cold restart restored both guests. Powered-off snapshots succeeded (details in the action log). Client reboot exposed early networkd DHCP adoption; the scoped NetworkManager startup fix in `config/90-lab-client-network.conf` was installed, profile priority corrected, and another Client reboot was tested:
@@ -33,9 +35,9 @@ X-Content-Type-Options: nosniff
 X-Frame-Options: SAMEORIGIN
 Referrer-Policy: strict-origin-when-cross-origin
 
-ssh -o BatchMode=yes -i ~/.ssh/server_ayush ayush@192.168.56.200 'whoami; hostname'
-ayush
-kapserver
+ssh -o BatchMode=yes -i ~/.ssh/server_lab labadmin@192.168.56.200 'whoami; hostname'
+labadmin
+server
 key_login_exit=0
 ```
 
@@ -51,7 +53,7 @@ webuser@192.168.56.200: Permission denied (publickey).
 regular_account_denial_exit=255
 ```
 
-Password-only test: `ssh -o BatchMode=yes -o PubkeyAuthentication=no -o PreferredAuthentications=password ayush@192.168.56.200 true`. No password guessing was used for this test. Positive key access was verified alongside these denials.
+Password-only test: `ssh -o BatchMode=yes -o PubkeyAuthentication=no -o PreferredAuthentications=password labadmin@192.168.56.200 true`. No password guessing was used for this test. Positive key access was verified alongside these denials.
 
 Effective Server configuration:
 
@@ -59,7 +61,7 @@ Effective Server configuration:
 permitrootlogin no
 passwordauthentication no
 kbdinteractiveauthentication no
-allowusers ayush
+allowusers labadmin
 ```
 
 ## Firewall and logs
@@ -71,7 +73,7 @@ Default: deny (incoming), allow (outgoing), disabled (routed)
 22/tcp ALLOW IN 192.168.56.201
 80/tcp ALLOW IN 192.168.56.0/24
 
-Mac host: nc -G 3 -zv 192.168.56.200 22
+Host-machine SSH probe to 192.168.56.200:22 (three-second timeout)
 Operation timed out (exit 1)
 ```
 
@@ -101,8 +103,8 @@ health_exit=0
 
 750 root:www-data /var/www/lab-site
 640 root:www-data /var/www/lab-site/index.html
-700 ayush:ayush /home/ayush/.ssh
-600 ayush:ayush /home/ayush/.ssh/authorized_keys
+700 labadmin:labadmin /home/labadmin/.ssh
+600 labadmin:labadmin /home/labadmin/.ssh/authorized_keys
 
 sha256sum -c /var/backups/lab-site/lab-site-20261009-092128.tar.gz.sha256
 /var/backups/lab-site/lab-site-20261009-092128.tar.gz: OK
@@ -115,7 +117,7 @@ The archive was extracted under a directory created by `mktemp -d /tmp/lab-resto
 
 ```text
 post_reboot_http=200
-kapserver
+server
 uptime: up 0 min
 kernel: 7.0.0-38-generic
 post_reboot_key_exit=0

@@ -2,15 +2,17 @@
 
 Verified on the actual local VMs; completed 10 October 2026 (Asia/Kolkata). See [selected command evidence](verification-evidence.md).
 
+VM labels, hostnames, and administrator identities below are neutral aliases for the original environment. `Server`, `Client`, `server`, `client`, and `labadmin` are examples; choose your own when reproducing the lab. Recorded addresses, versions, and outcomes are retained.
+
 | Field | Server VM | Client VM |
 |---|---|---|
-| VirtualBox name | `ubunutu server` | `ubuntu 26.04 ` (trailing space) |
+| VirtualBox name | `Server` | `Client` |
 | Ubuntu version | Ubuntu 26.04 LTS ARM64, kernel `7.0.0-38-generic` | Ubuntu 26.04 LTS ARM64, kernel `7.0.0-27-generic` |
-| Hostname | `kapserver` | `ubuntu26` |
+| Hostname | `server` | `client` |
 | NAT IP | `10.0.2.15/24` on `enp0s8` | `10.0.2.15/24` on `enp0s8`, separate NAT instance |
 | Host-only IP | Static `192.168.56.200/24` on `enp0s9` | Static `192.168.56.201/24` on `enp0s9`, NetworkManager |
 | Host-only network | `HostNetwork` | `HostNetwork` |
-| Administrator account | `ayush`, sudo verified in a fresh Client key session | `ayush`, successful SSH and sudo |
+| Administrator account | `labadmin`, sudo verified in a fresh Client key session | `labadmin`, successful SSH and sudo |
 | Regular account | `webuser`, no sudo membership, password locked | N/A |
 | Recovery baseline | `clean-install`, 2026-10-09 | Existing disk preserved |
 
@@ -21,9 +23,9 @@ Verified on the actual local VMs; completed 10 October 2026 (Asia/Kolkata). See 
 | Server package installation | Pass | Install script completed; Nginx and SSH enabled |
 | Nginx syntax and local HTTP | Pass | `nginx -t` succeeded; local and host-only HTTP returned 200 |
 | Client to server HTTP | Pass | HTTP 200, missing page 404, dotfile path 403 |
-| Approved SSH key and sudo | Pass | Client Ed25519 login returned `ayush`; sudo returned `root` |
+| Approved SSH key and sudo | Pass | Client Ed25519 login returned `labadmin`; sudo returned `root` |
 | Root/password SSH denied | Pass | Exit 255 before and after final Server reboot; `webuser` also denied |
-| Default-deny UFW with narrow rules | Pass | Client SSH allowed; Mac-host SSH timed out and UFW block logged |
+| Default-deny UFW with narrow rules | Pass | Client SSH allowed; host-machine SSH timed out and UFW block logged |
 | Reboot persistence | Pass | Client HTTP 200 and fresh key session after Server reboot; UFW and health remained valid |
 | Backup creation and temporary restoration | Pass | Archive created, extracted under `/tmp/lab-restore-check`, `diff -ru` returned no differences |
 | Backup checksum | Pass | SHA-256 check of the later archive reported OK |

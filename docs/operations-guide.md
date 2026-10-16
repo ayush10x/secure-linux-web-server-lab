@@ -2,15 +2,17 @@
 
 Administer the Server from the authorized Client VM:
 
+Replace `labadmin`, `server_lab`, and the example Server address with your chosen administrator account, private-key filename, and actual address. The hostnames are your choice.
+
 ```bash
-ssh -i ~/.ssh/server_ayush ayush@192.168.56.200
+ssh -i ~/.ssh/server_lab labadmin@192.168.56.200
 sudo /usr/local/sbin/lab-health-check
 sudo systemctl status nginx ssh --no-pager
 sudo ufw status verbose
 sudo sshd -t
 ```
 
-The Mac host is excluded from new Server SSH sessions. Use the Server VM console if the Client becomes unavailable.
+The host machine is excluded from new Server SSH sessions. Use the Server VM console if the Client becomes unavailable.
 
 ## Logs
 

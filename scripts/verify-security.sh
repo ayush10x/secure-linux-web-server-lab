@@ -2,9 +2,11 @@
 # Run on the authorized Client VM after Server hardening.
 set -u
 server_ip=${1:-}
-key_path=${2:-$HOME/.ssh/server_ayush}
-if [[ ! $server_ip =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ || ! -f $key_path ]]; then
-  printf 'Usage: %s SERVER_IPV4 CLIENT_PRIVATE_KEY\n' "$0" >&2
+key_path=${2:-$HOME/.ssh/server_lab}
+admin_user=${3:-labadmin}
+if [[ ! $server_ip =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ || ! -f $key_path || ! $admin_user =~ ^[a-z_][a-z0-9_-]{0,31}$ || $admin_user == root || $admin_user == webuser ]]; then
+  printf 'Usage: %s SERVER_IPV4 CLIENT_PRIVATE_KEY [ADMIN_USER]\n' "$0" >&2
+  printf 'ADMIN_USER defaults to labadmin; use your named administrator, not root or webuser.\n' >&2
   exit 64
 fi
 failures=0
@@ -38,7 +40,7 @@ ssh_denied() {
 # shellcheck disable=SC2317
 password_disabled() {
   local output status methods
-  output=$(ssh -v -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=yes -o PubkeyAuthentication=no -o PreferredAuthentications=password,keyboard-interactive "ayush@$server_ip" true 2>&1)
+  output=$(ssh -v -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=yes -o PubkeyAuthentication=no -o PreferredAuthentications=password,keyboard-interactive "$admin_user@$server_ip" true 2>&1)
   status=$?
   methods=$(printf '%s\n' "$output" | sed -n 's/^debug1: Authentications that can continue: //p')
   [[ $status == 255 && $output == *"Permission denied ("* && -n $methods ]] || return 1
@@ -51,9 +53,8 @@ ssh_args=(-o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=5 -o StrictHo
 check 'HTTP 200' http_status / 200
 check 'Missing page returns 404' http_status /lab-validation-missing 404
 check 'Dotfile path returns 403' http_status /.git/config 403
-# Expand these commands on the remote Server, not on the Client.
-# shellcheck disable=SC2016
-if ssh "${ssh_args[@]}" "ayush@$server_ip" 'test "$(whoami)" = ayush && test "$(hostname)" = kapserver'; then
+# Check the authenticated account without requiring a particular hostname.
+if remote_user=$(ssh "${ssh_args[@]}" "$admin_user@$server_ip" 'id -un') && [[ $remote_user == "$admin_user" ]]; then
   printf 'PASS: Administrator key login works\n'
   check 'Root SSH denied by authentication policy' ssh_denied ssh "${ssh_args[@]}" "root@$server_ip" true
   check 'Regular account SSH denied by authentication policy' ssh_denied ssh "${ssh_args[@]}" "webuser@$server_ip" true

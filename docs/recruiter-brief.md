@@ -1,8 +1,10 @@
 # Recruiter brief
 
-**Owner:** Ayush Kaushik  
-**Environment:** Ubuntu 26.04 LTS ARM64, VirtualBox, Apple M2 Pro  
+**Validated environment:** Ubuntu 26.04 LTS ARM64, VirtualBox, ARM64 host
+
 **Delivery:** Git-tracked configuration, Bash tools, CI, test evidence, and recovery documentation.
+
+This lab can be reproduced with your own administrator username and VM hostnames. Use an Ubuntu installer matching your host architecture; the recorded validation used ARM64.
 
 | Skill | Implementation | Evidence |
 |---|---|---|
@@ -23,7 +25,7 @@ Use this wording when you can explain and reproduce the implementation. Codex as
 ## Interview walkthrough
 
 1. Explain why NAT and host-only networking serve different purposes.
-2. Show the allowed Client key session and the denied Mac-host SSH probe.
+2. Show the allowed Client key session and the denied host-machine SSH probe.
 3. Explain why `00-lab-hardening.conf` must precede `50-cloud-init.conf`.
 4. Demonstrate the health script and extract a backup into a temporary directory.
 5. Discuss production improvements: TLS, protected keys, off-host backups, monitoring, and patch policy.

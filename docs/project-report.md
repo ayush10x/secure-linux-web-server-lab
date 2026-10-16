@@ -1,12 +1,13 @@
 # Secure Linux Web Server - Project Report
 
-**Owner:** Ayush Kaushik  
 **Validation completed:** 10 October 2026, Asia/Kolkata  
 **Project type:** Assisted, private-network Linux administration lab
 
 ## Executive summary
 
-Two Ubuntu 26.04 ARM64 VMs run in VirtualBox on an Apple M2 Pro. The Server hosts a static Nginx site and permits administration through a dedicated Ed25519 key from the Client. UFW applies default-deny inbound policy, with SSH restricted to the Client's fixed private address and HTTP restricted to the lab subnet.
+The original validation used two Ubuntu 26.04 ARM64 VMs in VirtualBox on an ARM64 host. The Server hosts a static Nginx site and permits administration through a dedicated Ed25519 key from the Client. UFW applies default-deny inbound policy, with SSH restricted to the Client's fixed private address and HTTP restricted to the lab subnet. Reproduction uses an installer matching your host architecture; validation on other architectures is not claimed.
+
+`labadmin`, `server`, and `client` are neutral aliases for the original identities and examples for reproduction. Choose your own administrator username and VM hostnames, and update the SSH configuration and commands consistently.
 
 Positive and negative access tests were recorded. The site and key access survived reboot; denied account probes, effective SSH settings and journal events support the policy. The original password-only BatchMode probe alone did not prove password authentication was disabled. The health check passed, a SHA-256 archive check succeeded, and an extracted backup matched the live site. CI checks Bash files and offline regression fixtures; local VM tests have a separate evidence record.
 
@@ -14,7 +15,7 @@ Positive and negative access tests were recorded. The site and key access surviv
 
 | Component | Server | Client |
 |---|---|---|
-| Hostname | `kapserver` | `ubuntu26` |
+| Hostname | `server` | `client` |
 | OS | Ubuntu 26.04 LTS ARM64 | Ubuntu 26.04 LTS ARM64 |
 | CPUs / memory | 2 / 3 GB | 2 / about 4.4 GB |
 | Virtual disk | 25 GB | 25 GB, preserved existing installation |
@@ -22,17 +23,17 @@ Positive and negative access tests were recorded. The site and key access surviv
 | Internet access | NAT, DHCP | NAT, DHCP |
 | Private network | VirtualBox `HostNetwork` | Same host-only network |
 
-Both private addresses are outside the DHCP pool ending at `.199`. The Server uses Netplan; the Client uses NetworkManager for its host-only connection. The Mac host is `.1` and is intentionally excluded from Server SSH. Both guests can show the same NAT address because they have separate NAT instances.
+Both private addresses are outside the DHCP pool ending at `.199`. The Server uses Netplan; the Client uses NetworkManager for its host-only connection. The host machine is `.1` and is intentionally excluded from Server SSH. Both guests can show the same NAT address because they have separate NAT instances.
 
 ## Implementation and decisions
 
-**Accounts and permissions.** `ayush` is the named sudo administrator. `webuser` has only its own group and a locked password. The site directory is `0750 root:www-data`, and the HTML file is `0640 root:www-data`; the Nginx worker can read the site without write access.
+**Accounts and permissions.** `labadmin` is the named sudo administrator. `webuser` has only its own group and a locked password. The site directory is `0750 root:www-data`, and the HTML file is `0640 root:www-data`; the Nginx worker can read the site without write access.
 
 **Web service.** Nginx serves `/var/www/lab-site` on port 80. A dedicated virtual host writes `lab-site.access.log` and `lab-site.error.log`, blocks dotfile paths, and adds content-type, frame, and referrer headers. Syntax was checked before reload, and systemd enables startup after reboot.
 
-**SSH.** A dedicated Client key is stored in the Client's home directory. Only the public key was installed on the Server. Key login and sudo were proven before disabling passwords. `00-lab-hardening.conf` precedes Ubuntu's `50-cloud-init.conf`, because OpenSSH uses the first obtained value for these settings. The effective configuration has `PermitRootLogin no`, `PasswordAuthentication no`, and `AllowUsers ayush`.
+**SSH.** A dedicated Client key is stored in the Client's home directory. Only the public key was installed on the Server. Key login and sudo were proven before disabling passwords. `00-lab-hardening.conf` precedes Ubuntu's `50-cloud-init.conf`, because OpenSSH uses the first obtained value for these settings. The effective configuration has `PermitRootLogin no`, `PasswordAuthentication no`, and `AllowUsers labadmin`.
 
-**Firewall.** UFW denies inbound traffic by default and permits outbound traffic. Its two explicit inbound rules allow TCP 22 from `.201` and TCP 80 from `192.168.56.0/24`. A new Client key session still worked; a new Mac-host SSH connection timed out and generated a UFW block event. IPv6 listeners exist, but there are no IPv6 allow rules in this lab.
+**Firewall.** UFW denies inbound traffic by default and permits outbound traffic. Its two explicit inbound rules allow TCP 22 from `.201` and TCP 80 from `192.168.56.0/24`. A new Client key session still worked; a new host-machine SSH connection timed out and generated a UFW block event. IPv6 listeners exist, but there are no IPv6 allow rules in this lab.
 
 **Operations.** Bash tools install the web service, check health, verify Client access, and archive the site with a SHA-256 checksum. A temporary extraction was compared with the live document root. SSH denial events and Nginx 200/404 requests were inspected in their actual logs.
 
@@ -42,7 +43,7 @@ The [evidence record](verification-evidence.md) contains observed commands and r
 
 ## Troubleshooting and lessons
 
-- An AMD64 installer was incompatible with Apple Silicon VirtualBox; the Server was installed from an ARM64 image.
+- An AMD64 installer did not match the ARM64 host; the Server was installed from an ARM64 image.
 - Client GUI startup stalled; its existing disk booted successfully through the headless frontend with 2 CPUs. Client validation was performed over SSH.
 - Early UI-driven password attempts failed. Direct SSH with the clarified credential succeeded; no password is included in the repository.
 - A late SSH drop-in would not override the earlier cloud-init password setting. File precedence was corrected and effective settings were checked.

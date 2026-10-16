@@ -44,26 +44,27 @@ def table(rows, widths):
 
 story.extend([p("LINUX ADMINISTRATION / PORTFOLIO LAB", "LabSmall"), Spacer(1, 12),
               p("Secure Linux<br/>Web Server", "LabTitle"),
-              p("Ayush Kaushik | Validated 10 October 2026", "LabBody")])
+              p("Reusable project guide | Validated 10 October 2026", "LabBody")])
 section("Project outcome", "Built and validated a two-VM Ubuntu ARM64 lab with Nginx, key-based SSH, source-restricted UFW rules, operational checks, and tested site-backup recovery. Client access works after Server reboot; unauthorized SSH paths are denied.")
 table([
-    ["Server: kapserver", "Client: ubuntu26"],
+    ["Server: server", "Client: client"],
     ["Ubuntu 26.04 LTS ARM64<br/>2 CPUs / 3 GB RAM / 25 GB disk", "Ubuntu 26.04 LTS ARM64<br/>2 CPUs / about 4.4 GB RAM / 25 GB disk"],
     ["Host-only IP: 192.168.56.200", "Host-only IP: 192.168.56.201"],
     ["Nginx site + OpenSSH + UFW", "Dedicated Ed25519 key + acceptance checks"],
 ], [239, 239])
-section("Network design", "Apple M2 Pro host running VirtualBox. Both guests use NAT for package downloads and the same host-only network for private lab traffic. Fixed addresses .200 and .201 are outside the DHCP pool. UFW permits TCP 22 from the Client and TCP 80 from the lab subnet; the Mac host's SSH probe is denied.")
+section("Network design", "The original validation used an ARM64 host running VirtualBox. Both guests use NAT for package downloads and the same host-only network for private lab traffic. Fixed addresses .200 and .201 are outside the DHCP pool. UFW permits TCP 22 from the Client and TCP 80 from the lab subnet; the host machine's SSH probe is denied.")
+section("Reproduce with your choices", "Choose your own administrator username, VM labels, hostnames, and SSH key filename. This report uses labadmin, server/client, and server_lab as neutral aliases in historical evidence. Match the Ubuntu installer to your host architecture (ARM64 or AMD64); other architectures have not been validated here. Update AllowUsers before installing the SSH policy and pass your administrator username as the verifier's third argument.")
 section("Skills demonstrated", "Linux accounts and permissions; systemd service management; Netplan and NetworkManager; OpenSSH policy validation; UFW; log interpretation; Bash automation; checksum-backed recovery; GitHub CI and technical documentation.")
-section("Scope", "Private-network learning lab serving static HTTP. No public endpoint, production TLS, high availability or production-experience claim. The trusted Mac/Client and source-IP restriction do not defend against host or key compromise; see the threat model.")
+section("Scope", "Private-network learning lab serving static HTTP. No public endpoint, production TLS, high availability or production-experience claim. The trusted host/Client and source-IP restriction do not defend against host or key compromise; see the threat model.")
 
 story.append(PageBreak())
 story.append(p("Validation and controls", "LabTitle"))
 table([
     ["Test", "Observed result"],
     ["Client web access", "HTTP 200; missing page 404; requests appear in the site's log."],
-    ["Administrator key + sudo", "Fresh key session authenticates ayush; sudo returns root."],
+    ["Administrator key + sudo", "Fresh key session authenticates labadmin; sudo returns root."],
     ["SSH policy evidence", "Effective daemon settings disable root/password/interactive access; account-denial logs and Client probes support this."],
-    ["Firewall restriction", "Default deny incoming; only the intended SSH and HTTP rules. Mac-host SSH times out with UFW block evidence."],
+    ["Firewall restriction", "Default deny incoming; only the intended SSH and HTTP rules. host-machine SSH times out with UFW block evidence."],
     ["Health and recovery", "Health exit 0; SHA-256 archive check OK; temporary restore diff exit 0."],
     ["Server reboot", "Client HTTP 200 and fresh key access return; root/password denials persist."],
     ["Package integrity", "APT refresh/upgrade exit 0; dpkg audit empty. Four packages deferred by Ubuntu phasing."],
@@ -78,7 +79,7 @@ section("Recovery workflow", "The backup tool creates a root-only site archive a
 section("Troubleshooting", "Replaced an incompatible AMD64 installer with ARM64. Worked around a stalled Client GUI frontend using headless boot and SSH. Corrected SSH drop-in precedence. After a long pause, corrected stale guest time and restarted chrony so APT metadata validation could succeed without bypassing its checks.")
 section("Known limitations", "The Client's headless boot and SSH work, but its GUI launch issue remains. Chrony had no selected source at final inspection; ongoing NTP synchronization is not claimed. HTTP is isolated-lab only. The dedicated key is unencrypted. Backups are local and cover site content; full disaster recovery, scheduled backups, TLS, and centralized monitoring are future work.")
 section("Portfolio use", "Suggested resume entry: Built and validated an assisted two-VM Ubuntu ARM64 web-server lab using Nginx, Ed25519 SSH authentication, and source-restricted UFW rules. Automated health and backup checks, verified checksum-based recovery, and documented positive and negative tests with GitHub CI.")
-section("Ownership and assistance", "Built for Ayush Kaushik with Codex assistance for setup, troubleshooting, scripts, and documentation. The owner should explain and reproduce the implementation before presenting it as personal expertise. The project demonstrates lab practice, not production employment experience.")
+section("Project context and assistance", "A reusable lab with Codex assistance for setup, troubleshooting, scripts, and documentation. Anyone presenting the project should explain and reproduce the implementation before claiming personal expertise. The project demonstrates lab practice, not production employment experience.")
 section("Repository and further reading", '<link href="https://github.com/ayush10x/secure-linux-web-server-lab" color="#087961">github.com/ayush10x/secure-linux-web-server-lab</link><br/>README, project report, recruiter brief, verification evidence, setup guide, operations guide, and separate action/decision log.')
 
 def footer(canvas, doc):
@@ -87,12 +88,12 @@ def footer(canvas, doc):
     canvas.line(58, 43, A4[0] - 58, 43)
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(INK)
-    canvas.drawString(58, 29, "Ayush Kaushik | Secure Linux Web Server Lab")
+    canvas.drawString(58, 29, "Secure Linux Web Server Lab | Reusable project guide")
     canvas.drawRightString(A4[0] - 58, 29, f"{doc.page}")
     canvas.restoreState()
 
 doc = SimpleDocTemplate(str(OUT), pagesize=A4, rightMargin=58, leftMargin=58,
                         topMargin=48, bottomMargin=62, title="Secure Linux Web Server Lab",
-                        author="Ayush Kaushik", subject="Validated Linux administration portfolio lab")
+                        author="Secure Linux Web Server Lab", subject="Validated Linux administration portfolio lab")
 doc.build(story, onFirstPage=footer, onLaterPages=footer)
 print(OUT)

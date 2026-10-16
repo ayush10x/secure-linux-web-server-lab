@@ -4,9 +4,9 @@
 
 Run these reproduction commands from the repository root. The actual test record is in [lab-record.md](lab-record.md), and [action-log.md](action-log.md) records actions and reasons.
 
-On Apple Silicon, use an ARM64 installer. The VirtualBox labels are `ubunutu server` and `ubuntu 26.04 `; Linux hostnames are `kapserver` and `ubuntu26`. Static host-only addresses are `192.168.56.200/24` for Server and `192.168.56.201/24` for Client, both on `enp0s9`.
+Choose your own VM labels and Linux hostnames; `Server`/`Client` and `server`/`client` are examples. Match the Ubuntu installer to the host architecture: ARM64 for an ARM64 host or AMD64 for an x86-64 host. The original validation used ARM64 guests. Example static host-only addresses are `192.168.56.200/24` for Server and `192.168.56.201/24` for Client; inspect your actual interface names before configuring them.
 
-The installer account is the named sudo administrator `ayush`. Keep its password out of this repository. The Server VM has a `clean-install` snapshot, and the web-service installation below has run successfully. To reproduce from the snapshot or on a fresh VM, copy this repository to the Server VM and run:
+Use the named sudo administrator created during installation. This guide uses `labadmin` as an example: replace it everywhere with your chosen username, especially in `AllowUsers`, SSH commands, and the verifier's third argument. The SSH key filename `server_lab` is also an example. Keep passwords out of this repository. The original Server VM has a `clean-install` snapshot, and the web-service installation below has run successfully. To reproduce from your baseline snapshot or on a fresh VM, copy this repository to the Server VM and run:
 
 ```bash
 sudo bash scripts/install-server.sh --apply
@@ -26,15 +26,15 @@ The server is complete when it has a predictable lab IP and hostname, separate a
 
 ## Scope
 
-Included: one Ubuntu Server 26.04 LTS server, one Linux client, Nginx, OpenSSH, UFW, a static site, local backup, logging, and lab testing. The existing local installer is Ubuntu 26.04 ARM64; apply all available updates after installation.
+Included: one Ubuntu Server 26.04 LTS server, one Linux client, Nginx, OpenSSH, UFW, a static site, local backup, logging, and lab testing. The original local installer was Ubuntu 26.04 ARM64; choose the matching architecture for your host and apply available updates after installation.
 
 Excluded: public DNS, production TLS certificates, internet exposure, databases, application frameworks, load balancing, and penetration testing outside the private lab.
 
 ## Prerequisites and VM sizing
 
-- Host: Apple Silicon Mac (this lab uses an M2 Pro), VirtualBox 7.2 or later, and enough free RAM/storage for both guests. Do not use an AMD64 Ubuntu ISO on Apple Silicon VirtualBox.
-- Server VM: Ubuntu Server 26.04 ARM64, 2 virtual CPUs, 3 GB RAM, 25 GB dynamically allocated virtual disk. The existing `ubunutu server` VM matches this sizing.
-- Client VM: ARM64 Linux, 2 virtual CPUs, about 4.4 GB RAM, and a 25 GB disk. The existing installation is preserved and boots headlessly; SSH provides administration.
+- Host: a computer supported by VirtualBox 7.2 or later, hardware virtualization, and enough free RAM/storage for both guests. Use an installer matching the host architecture; ARM64 and AMD64 images are not interchangeable.
+- Server VM: Ubuntu Server 26.04, 2 virtual CPUs, 3 GB RAM, 25 GB dynamically allocated virtual disk. Choose any VM label and hostname.
+- Client VM: Linux matching the host architecture, 2 virtual CPUs, about 4 GB RAM, and a 25 GB disk. Choose any VM label and hostname. The original Client was administered over SSH after headless boot.
 - Networking on **both** VMs: Adapter 1 = NAT for package downloads; Adapter 2 = the same VirtualBox host-only network (`HostNetwork`) for SSH and HTTP lab traffic. The Server uses `192.168.56.200/24`, outside this host-only network's DHCP range (`192.168.56.1`–`192.168.56.199`). Confirm both guest addresses with `ip -br address` before running tests.
 - Keep installer ISO images and any VM snapshots outside the Git repository. Never publish passwords, private SSH keys, guest disk images, or raw logs containing secrets.
 
@@ -44,7 +44,7 @@ Excluded: public DNS, production TLS certificates, internet exposure, databases,
 Client VM (CLIENT_HOST_ONLY_IP)
        | SSH 22, HTTP 80
        v
-Server VM (192.168.56.200, hostname kapserver)
+Server VM (192.168.56.200, hostname server)
   +-- OpenSSH: remote administration
   +-- UFW: default deny incoming
   +-- Nginx: /var/www/lab-site
@@ -52,7 +52,7 @@ Server VM (192.168.56.200, hostname kapserver)
   +-- /var/backups/lab-site
 ```
 
-Required software: `openssh-server`, `nginx`, `ufw`, `rsync`, and `curl`. Use a VM snapshot named `clean-install` before starting. The ARM64 installer is required for Apple Silicon VirtualBox.
+Required software: `openssh-server`, `nginx`, `ufw`, `rsync`, and `curl`. Take a baseline VM snapshot before starting; `clean-install` is the example name used below.
 
 ## Implementation
 
@@ -73,7 +73,7 @@ hostnamectl
 ip -br address
 ```
 
-- **Expected result:** Hostname is `kapserver`; the private adapter has the expected address; packages install successfully. If you intentionally rename the host, use `sudo hostnamectl set-hostname NEW_NAME` and update the record.
+- **Expected result:** The hostname matches your chosen Server name; the private adapter has the expected address; packages install successfully. To rename the host, use `sudo hostnamectl set-hostname YOUR_CHOSEN_HOSTNAME` and update the record.
 - **Verify:** `systemctl is-active ssh nginx` and `systemctl is-enabled ssh nginx` both report active/enabled.
 - **Common mistakes:** Updating the wrong VM, confusing NAT and private-adapter addresses, or continuing after package errors.
 - **Rollback:** Restore the `clean-install` snapshot if the baseline is unusable.
@@ -122,13 +122,13 @@ This basic template is not the complete recovery recipe for the existing Client:
 
 ```bash
 sudo adduser --disabled-password --gecos '' webuser
-id ayush
+id labadmin
 id webuser
-sudo -l -U ayush
+sudo -l -U labadmin
 ```
 
-- **Expected result:** `ayush` belongs to `sudo`; `webuser` does not.
-- **Verify:** From the VM console, log in as `ayush` and run `sudo whoami`; output should be `root`.
+- **Expected result:** `labadmin` belongs to `sudo`; `webuser` does not.
+- **Verify:** From the VM console, log in as `labadmin` and run `sudo whoami`; output should be `root`.
 - **Common mistakes:** Omitting `-a` in `usermod -aG`, which can remove existing group membership.
 - **Rollback:** If the installer account lacks sudo, use an existing administrator or recovery console to correct its membership. Do not create a duplicate account with the same name.
 
@@ -162,7 +162,7 @@ curl -I http://127.0.0.1/
 - **Actions (client):**
 
 ```bash
-ssh-keygen -t ed25519 -a 64 -f ~/.ssh/server_ayush
+ssh-keygen -t ed25519 -a 64 -f ~/.ssh/server_lab
 ```
 
 Before the first Client connection, obtain the Server host-key fingerprint through its trusted VM console:
@@ -174,16 +174,16 @@ sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 Then on the Client connect and compare the displayed ED25519 fingerprint with that console value before accepting it into `known_hosts`:
 
 ```bash
-ssh -o HostKeyAlgorithms=ssh-ed25519 ayush@SERVER_HOST_ONLY_IP true
-ssh-copy-id -i ~/.ssh/server_ayush.pub ayush@SERVER_HOST_ONLY_IP
-ssh -o IdentitiesOnly=yes -i ~/.ssh/server_ayush ayush@SERVER_HOST_ONLY_IP
+ssh -o HostKeyAlgorithms=ssh-ed25519 labadmin@SERVER_HOST_ONLY_IP true
+ssh-copy-id -i ~/.ssh/server_lab.pub labadmin@SERVER_HOST_ONLY_IP
+ssh -o IdentitiesOnly=yes -i ~/.ssh/server_lab labadmin@SERVER_HOST_ONLY_IP
 ```
 
 Keep the private key on the client with mode `0600`; only the `.pub` file may be shared. On the server, `~/.ssh` should be `0700` and `authorized_keys` should be `0600`.
 
 Do not treat `ssh-keyscan` alone as identity verification. The automated security verifier uses `StrictHostKeyChecking=yes` and requires this prior trusted enrollment. A changed host key is a failure to investigate at the console, not a reason to disable checking. Use a key passphrase for normal interactive administration; the historical lab's unencrypted key is disclosed as a limitation.
 
-For noninteractive `BatchMode` tests with a protected key, first unlock it in your SSH agent (`ssh-add ~/.ssh/server_ayush`) through an interactive trusted terminal. Do not remove the key's passphrase to satisfy an automated check.
+For noninteractive `BatchMode` tests with a protected key, first unlock it in your SSH agent (`ssh-add ~/.ssh/server_lab`) through an interactive trusted terminal. Do not remove the key's passphrase to satisfy an automated check.
 
 - **Expected result:** A new client terminal logs in with the key and `sudo -v` succeeds.
 - **Verify:** Keep the original session open; open a second session and run `whoami`, `hostname`, and `sudo -v`.
@@ -195,7 +195,7 @@ For noninteractive `BatchMode` tests with a protected key, first unlock it in yo
 > **Lockout warning:** Do not disable password or root login until key login and `sudo` work in a second session. Keep a console and existing SSH session open.
 
 - **Objective:** Limit SSH to named administrators using keys.
-- **Actions:** Check `AllowUsers` matches the actual administrator account, then copy `config/00-lab-hardening.conf` to `/etc/ssh/sshd_config.d/` and run. The `00-` prefix precedes Ubuntu's `50-cloud-init.conf`: OpenSSH uses the first value found for these directives.
+- **Actions:** Edit `config/00-lab-hardening.conf` so `AllowUsers labadmin` contains your actual administrator username. Only then copy it to `/etc/ssh/sshd_config.d/` and run the commands below. The `00-` prefix precedes Ubuntu's `50-cloud-init.conf`: OpenSSH uses the first value found for these directives.
 
 ```bash
 sudo install -o root -g root -m 0644 config/00-lab-hardening.conf /etc/ssh/sshd_config.d/00-lab-hardening.conf
@@ -204,7 +204,7 @@ sudo sshd -T | grep -E 'permitrootlogin|passwordauthentication|pubkeyauthenticat
 sudo systemctl reload ssh
 ```
 
-- **Expected result:** Syntax validation is silent; effective settings show root/password login disabled and `ayush` allowed.
+- **Expected result:** Syntax validation is silent; effective settings show root/password login disabled and `labadmin` allowed.
 - **Verify:** In a new client terminal, confirm key login works and password-only/root attempts fail. Do not close the recovery session until both results are recorded.
 - **Common mistakes:** Editing `/etc/ssh/sshd_config` without a backup, misspelling the username, or restarting before validation.
 - **Rollback:** From the console/open session, move the drop-in out of `/etc/ssh/sshd_config.d`, run `sudo sshd -t`, then reload SSH.
@@ -263,7 +263,7 @@ sudo diff -ru /var/www/lab-site "$restore_dir/var/www/lab-site"
 
 ## Validation and acceptance
 
-Use [test-plan.md](test-plan.md) and run `bash scripts/verify-security.sh 192.168.56.200 ~/.ssh/server_ayush` on the Client after hardening. The project passes when web access, reboot persistence, key login, access denials, firewall restriction, logs, backup integrity, and restoration pass.
+Use [test-plan.md](test-plan.md) and run `bash scripts/verify-security.sh 192.168.56.200 ~/.ssh/server_lab labadmin` on the Client after hardening. Substitute your Server IP, private-key path, and administrator username. No particular hostname is required. The project passes when web access, reboot persistence, key login, access denials, firewall restriction, logs, backup integrity, and restoration pass.
 
 ## Risks and recovery
 
